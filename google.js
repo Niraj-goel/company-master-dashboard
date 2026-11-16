@@ -11,11 +11,31 @@ const SCOPES = [
 let key = null, token = null, tokenExp = 0;
 const b64url = b => Buffer.from(b).toString("base64").replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
 
+// Accepts the private key however a host stores it: with or without surrounding quotes, with real line
+// breaks, literal \n, or everything on one line separated by spaces. Rebuilds a clean PEM from the base64 body.
+function normalisePem(raw) {
+  let s = String(raw).trim();
+  if (/^(["']).*\1$/s.test(s)) s = s.slice(1, -1);
+  s = s.replace(/\\r/g, "").replace(/\\n/g, "\n").replace(/\r/g, "");
+  if (!/-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(s) && /^[A-Za-z0-9+/=\s]+$/.test(s)) {
+    const decoded = Buffer.from(s.replace(/\s/g, ""), "base64").toString("utf8");   // key given as base64 of the PEM
+    if (decoded.includes("PRIVATE KEY-----")) s = decoded;
+  }
+  const m = /-----BEGIN ([A-Z ]*PRIVATE KEY)-----([\s\S]*?)-----END \1-----/.exec(s);
+  if (!m) throw new Error("GOOGLE_PRIVATE_KEY is not a private key: it must contain -----BEGIN PRIVATE KEY----- and -----END PRIVATE KEY-----");
+  const body = m[2].replace(/[^A-Za-z0-9+/=]/g, "");
+  const pem = `-----BEGIN ${m[1]}-----\n${body.match(/.{1,64}/g).join("\n")}\n-----END ${m[1]}-----\n`;
+  try { crypto.createPrivateKey(pem); }
+  catch (e) { throw new Error(`GOOGLE_PRIVATE_KEY could not be read (${e.message}). Paste the private_key value from the service-account JSON again, all of it.`); }
+  return pem;
+}
+
 function loadKey() {
   if (key) return key;
-  const {GOOGLE_CLIENT_EMAIL: email, GOOGLE_PRIVATE_KEY: pk, GOOGLE_TOKEN_URI: uri} = process.env;
-  if (!email || !pk) throw new Error("GOOGLE_CLIENT_EMAIL and GOOGLE_PRIVATE_KEY must be set in .env");
-  key = {client_email: email, private_key: pk.replace(/\\n/g, "\n"), token_uri: uri || "https://oauth2.googleapis.com/token"};
+  let {GOOGLE_CLIENT_EMAIL: email, GOOGLE_PRIVATE_KEY: pk, GOOGLE_TOKEN_URI: uri, GOOGLE_SERVICE_ACCOUNT_JSON: json} = process.env;
+  if (json) { const j = JSON.parse(json); email = email || j.client_email; pk = pk || j.private_key; uri = uri || j.token_uri; }
+  if (!email || !pk) throw new Error("GOOGLE_CLIENT_EMAIL and GOOGLE_PRIVATE_KEY must be set (in .env, or in the host's environment settings)");
+  key = {client_email: email.trim(), private_key: normalisePem(pk), token_uri: (uri || "https://oauth2.googleapis.com/token").trim()};
   return key;
 }
 
