@@ -7,11 +7,14 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const g = require("./google.js");
+const {findDocuments} = require("./docs.js");
 
 const CONFIG = {
   port: +process.env.PORT || 3000,
   sheetId: process.env.SHEET_ID || "1nK-tKjoSH2Y84YE-0rOIgQgvBA238mCUBp0fK5igdRg",
   rocFolder: process.env.ROC_FOLDER_ID || "128CihawD0mDOwpsd2m1EIo5N40jzwAp0",
+  panFolder: process.env.PAN_FOLDER_ID || "1l4Y_WnaUfaFSeElUvKBxXA-XLJd5UfQV",   // Statutory/PAN
+  gstFolder: process.env.GST_FOLDER_ID || "1W7kXNNf7X6vyuhiE-SlQrSSD_Fc22jSY",   // Statutory/GST (searched with its subfolders)
   tabs: ["Entities", "Share count", "Shareholders", "Shareholding", "Cross holdings", "Financials",
     "Borrowings by lender", "Loans given", "FS holders", "MCA master", "MCA directors", "MCA charges"],
   cacheMs: 2 * 60 * 1000,                     // reuse a read for 2 minutes unless ?refresh=1
@@ -21,6 +24,7 @@ const CONFIG = {
 
 let cache = null, cacheAt = 0, inflight = null;
 const rocBytes = new Map();                    // fileId -> {modifiedTime, b64}
+let allowedDocs = new Map();                   // fileId -> {name, mimeType}: the only files /api/doc will serve
 
 async function readAll() {
   const sheet = g.sheetValues(CONFIG.sheetId, CONFIG.tabs.map(t => `'${t}'`));
@@ -45,10 +49,33 @@ async function readAll() {
       return {files: out, errors, total: files.length};
     } catch (e) { return {files: [], errors: [e.message], total: 0, failed: true}; }
   })();
-  const [s, r] = await Promise.all([sheet, roc]);
   const tables = {};
-  s.valueRanges.forEach((vr, i) => { tables[CONFIG.tabs[i]] = vr.values || []; });
-  return {readAt: new Date().toISOString(), tables, roc: r};
+  const docs = sheet.then(async s => {
+    s.valueRanges.forEach((vr, i) => { tables[CONFIG.tabs[i]] = vr.values || []; });
+    try {
+      const [head = [], ...rows] = tables.Entities || [];
+      const col = h => head.indexOf(h);
+      const entities = rows.filter(r => r[col("Company")]).map(r => ({
+        name: r[col("Company")], cin: String(r[col("CIN / LLPIN")] || ""), pan: String(r[col("PAN")] || ""), gst: String(r[col("GSTIN")] || "")}));
+      return await findDocuments(entities, {roc: CONFIG.rocFolder, pan: CONFIG.panFolder, gst: CONFIG.gstFolder});
+    } catch (e) { return {docs: {}, allowed: new Map(), error: e.message}; }
+  });
+  const [r, d] = await Promise.all([roc, docs]);
+  allowedDocs = d.allowed;
+  return {readAt: new Date().toISOString(), tables, roc: r, docs: d.docs, docsError: d.error};
+}
+
+// Streams one matched document (PAN card, GST certificate or ROC file) as a download.
+async function sendDoc(res, id) {
+  if (!allowedDocs.size) await data(false);
+  const f = allowedDocs.get(id);
+  if (!f) return send(res, 404, "text/plain", "Document not found. Refresh the dashboard and try again.");
+  const bytes = await g.download(id);
+  const ascii = f.name.replace(/[^\x20-\x7e]/g, "_").replace(/"/g, "'");
+  res.writeHead(200, {"content-type": f.mimeType || "application/octet-stream", "content-length": bytes.length,
+    "content-disposition": `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(f.name)}`,
+    "cache-control": "private, no-store", "x-content-type-options": "nosniff"});
+  res.end(bytes);
 }
 
 async function data(refresh) {
@@ -78,6 +105,8 @@ http.createServer(async (req, res) => {
       return send(res, 200, "text/html; charset=utf-8", fs.readFileSync(path.join(__dirname, "public", "index.html")));
     if (url.pathname === "/api/data")
       return send(res, 200, "application/json", JSON.stringify(await data(url.searchParams.has("refresh"))));
+    const doc = /^\/api\/doc\/([A-Za-z0-9_-]{10,})$/.exec(url.pathname);
+    if (doc) return await sendDoc(res, doc[1]);
     send(res, 404, "text/plain", "Not found");
   } catch (e) {
     const hint = e.status === 403 && /has not been used|disabled/.test(e.message)

@@ -103,6 +103,12 @@ tfoot tr.tkft td{background:var(--ochre-soft);color:var(--ochre);border-top:1px 
 .stamp.ok{color:var(--ok);background:var(--ok-soft);border-color:var(--ok)}
 .stamp.bad{color:var(--seal);background:var(--seal-soft);border-color:var(--seal)}
 .stamp.na{color:var(--muted);border-style:dashed;font-family:inherit}
+[hidden]{display:none!important}
+a.doclink{text-decoration:none;display:inline-flex;align-items:center;gap:3px;border-radius:3px}
+a.doclink .stamp{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
+a.doclink .dl{font-size:12px;color:var(--ledger);font-weight:700}
+a.doclink:hover .stamp{text-decoration-style:solid;filter:brightness(.95)}
+a.doclink:focus-visible{outline:2px solid var(--ledger);outline-offset:2px}
 .tag{display:inline-block;padding:0 7px;border-radius:10px;font-size:12px;background:var(--ledger-soft);color:var(--ledger);margin:1px 3px 1px 0;white-space:nowrap}
 .con{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
 .sev{font-weight:650;white-space:nowrap}
@@ -602,14 +608,20 @@ function buildFilters(){
 function syncFilterUI(){ $("#q").value = F.q; $("#fCon").value = F.con; $("#fProj").value = F.proj; $("#fGst").value = F.gst; $("#fSw").value = F.sw; $("#fDir").value = F.dir; }
 
 const stamp = (v, ok, na) => !v ? `<span class="stamp na">${na}</span>` : `<span class="stamp ${ok ? "ok" : "bad"}">${esc(v)}</span>`;
+// Wraps an identifier stamp in a download link when the entity's document was found in Drive.
+const DOC_LABEL = {roc:"ROC record", pan:"PAN card", gst:"GST certificate"};
+const docLink = (e, kind, html) => {
+  const d = ((window.__DOCS || {})[e.name] || {})[kind];
+  return d ? `<a class="doclink" href="api/doc/${encodeURIComponent(d.id)}" title="Download ${DOC_LABEL[kind]}: ${esc(d.name)}" onclick="event.stopPropagation()">${html}<span class="dl" aria-hidden="true">↓</span></a>` : html;
+};
 const REG = [
   {k:"sr", h:"Sr", r:true, f:e => e.sr ?? "", s:e => +e.sr || 0},
   {k:"name", h:"Entity", f:e => `<span class="con" style="background:${CON_COLOR[e.con]}"></span>${esc(e.name)}<div class="sub">${esc(e.con)}</div>`, s:e => e.name.toLowerCase(), csv:e => e.name},
   {k:"proj", h:"Project", f:e => e.projects.map(p => `<span class="tag">${esc(p)}</span>`).join(""), s:e => e.projects.join(), csv:e => e.projects.join("; ")},
   {k:"doi", h:"Incorporated", f:e => fmtDate(e.doi), s:e => e.doi ? e.doi.getTime() : 0, csv:e => fmtDate(e.doi)},
-  {k:"cin", h:"CIN / LLPIN", f:e => stamp(e.cin, e.checks.cin && e.checks.cinYear && e.checks.cinPtc, "Not applicable"), s:e => e.cin, csv:e => e.cin || "Not applicable"},
-  {k:"pan", h:"PAN", f:e => stamp(e.pan, e.checks.pan && e.checks.panType && e.checks.panName, "Missing"), s:e => e.pan, csv:e => e.pan},
-  {k:"gst", h:"GSTIN", f:e => stamp(e.gst, e.checks.gst && e.checks.gstPan && e.checks.gstCk && e.checks.gstState, "Not applicable"), s:e => e.gst, csv:e => e.gst || "Not applicable"},
+  {k:"cin", h:"CIN / LLPIN", f:e => docLink(e, "roc", stamp(e.cin, e.checks.cin && e.checks.cinYear && e.checks.cinPtc, "Not applicable")), s:e => e.cin, csv:e => e.cin || "Not applicable"},
+  {k:"pan", h:"PAN", f:e => docLink(e, "pan", stamp(e.pan, e.checks.pan && e.checks.panType && e.checks.panName, "Missing")), s:e => e.pan, csv:e => e.pan},
+  {k:"gst", h:"GSTIN", f:e => docLink(e, "gst", stamp(e.gst, e.checks.gst && e.checks.gstPan && e.checks.gstCk && e.checks.gstState, "Not applicable")), s:e => e.gst, csv:e => e.gst || "Not applicable"},
   {k:"paid", h:"Paid-up (₹ lakh)", r:true, f:e => lakh(e.paid), s:e => e.paid ?? -1, csv:e => e.paid == null ? "" : (e.paid / 1e5).toFixed(2)},
   {k:"dir", h:"Directors / partners", f:e => { const d = dirsFor(e); return d.list.length ? d.list.map(x => esc(x.name)).join("<br>") + `<div class="sub">${d.src === "MCA" ? "MCA master data" : "FS signatories"}</div>` : `<span class="small">Not available</span>`; }, s:e => dirsFor(e).list.map(x => x.name).join(), csv:e => dirsFor(e).list.map(x => x.name).join("; ")},
   {k:"docs", h:"Documents", f:e => docChips(e), s:e => docLinks(e).length, csv:e => docLinks(e).map(d => `${d.k}: ${d.path}`).join("; ")},
@@ -1923,6 +1935,7 @@ function b64bytes(s) { const bin = atob(s); const a = new Uint8Array(bin.length)
   const missing = Object.keys(SCHEMA).filter(k => !(d.tables[SCHEMA[k].title] || []).length).map(k => SCHEMA[k].title);
   if (missing.includes("Entities")) { liveBanner("The Entities tab of the Company Master Data sheet is empty or missing.", true); return; }
   window.__SEED = fromTables(T, SCHEMA);
+  window.__DOCS = d.docs || {};
   window.__LIVE_AT = new Date(d.readAt);
   const app = document.createElement("script");
   app.textContent = document.getElementById("app").textContent;
