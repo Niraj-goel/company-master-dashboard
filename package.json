@@ -1,0 +1,14 @@
+{
+  "name": "company-master-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Alcove Group Company Master Dashboard, served live from Google Sheets and Drive",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}
