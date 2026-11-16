@@ -1,0 +1,1969 @@
+<title>Alcove Company Master</title>
+<style>
+:root{
+  --paper:#F5F7F6; --sheet:#FFFFFF; --ink:#1B2422; --muted:#5D6B67; --rule:#D5DDDA;
+  --ledger:#16483F; --ledger-soft:#E3EEEA; --ochre:#9A6B12; --ochre-soft:#F6ECD6;
+  --seal:#A8261D; --seal-soft:#F8E3E0; --ok:#1E6B45; --ok-soft:#DFF0E6;
+  --c-co:#16483F; --c-llp:#C08A1E; --c-firm:#6E7FA8;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#111816; --sheet:#18211F; --ink:#E4ECE9; --muted:#9AABA6; --rule:#2C3936;
+    --ledger:#7CC4B2; --ledger-soft:#1D332E; --ochre:#E0B256; --ochre-soft:#3A2F17;
+    --seal:#F08A80; --seal-soft:#3D1F1C; --ok:#7FD1A4; --ok-soft:#173327;
+    --c-co:#7CC4B2; --c-llp:#E0B256; --c-firm:#9FB0D6;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);
+  font:14px/1.5 "Segoe UI","Public Sans",system-ui,-apple-system,Roboto,Arial,sans-serif;font-variant-numeric:tabular-nums}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
+
+.mast{background:var(--ledger);color:#F2F7F5;padding:20px 28px 0}
+@media (prefers-color-scheme:dark){.mast{background:#0E2D27}}
+.mast-top .btn+.btn{margin-left:6px}
+.mast-top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.mast h1{margin:0;font-size:26px;font-weight:650;letter-spacing:-.01em}
+.mast p{margin:2px 0 0;color:#B9D3CC;font-size:13px}
+.btn{border:1px solid rgba(255,255,255,.35);background:transparent;color:#F2F7F5;padding:7px 14px;border-radius:4px;cursor:pointer;display:inline-block}
+.btn:hover{background:rgba(255,255,255,.1)}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;margin-top:16px}
+nav.tabs button{background:transparent;border:0;color:#B9D3CC;padding:10px 16px;border-radius:6px 6px 0 0;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{background:var(--paper);color:var(--ink);font-weight:600}
+nav.tabs .count{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:10px;font-size:12px;background:rgba(255,255,255,.15)}
+nav.tabs button[aria-selected="true"] .count{background:var(--seal-soft);color:var(--seal)}
+
+main{padding:22px 28px 60px;max-width:1500px}
+.ledger{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border-top:3px double var(--ledger);border-bottom:1px solid var(--rule);margin:0 0 24px;background:var(--sheet)}
+.ledger div{padding:12px 16px;border-right:1px solid var(--rule)}
+.ledger div:last-child{border-right:0}
+.ledger dt{font-size:12px;color:var(--muted)}
+.ledger dd{margin:0;font-size:22px;font-weight:650}
+.ledger dd small{font-size:12px;font-weight:400;color:var(--muted);display:block}
+.ledger dd.bad{color:var(--seal)}
+
+h2{font-size:17px;margin:0 0 4px;font-weight:650}
+.lead{color:var(--muted);font-size:13px;margin:0 0 14px;max-width:85ch}
+.panel{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:18px 20px;margin-bottom:18px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:18px}
+.grid2 .panel{margin-bottom:0}
+
+/* Timeline */
+.tl-wrap{overflow-x:auto}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--muted);margin-bottom:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+svg text{fill:var(--muted);font-size:11px}
+svg .axis{stroke:var(--rule)}
+svg .dot{cursor:pointer}
+svg .dot:hover{stroke:var(--ink);stroke-width:2}
+svg .lbl{fill:var(--ink);font-size:12px}
+svg .val{fill:var(--ink);font-size:12px;font-weight:600}
+
+/* Bars */
+.bars{display:grid;grid-template-columns:minmax(120px,max-content) 1fr auto;gap:6px 12px;align-items:center;font-size:13px}
+.bars .track{height:14px;background:var(--ledger-soft);border-radius:2px;overflow:hidden}
+.bars .fill{height:100%;background:var(--ledger)}
+.bars .fill.alt{background:var(--ochre)}
+.bars .n{text-align:right;font-weight:600;min-width:28px}
+.bars button{all:unset;cursor:pointer;color:var(--ink)}
+.bars button:hover{text-decoration:underline}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.toolbar input[type=search],.toolbar select{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:7px 10px}
+.toolbar input[type=search]{min-width:260px}
+.toolbar .sp{flex:1}
+.lbtn{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:7px 12px;cursor:pointer}
+.lbtn:hover{border-color:var(--ledger)}
+.small{font-size:12px;color:var(--muted)}
+
+.tablewrap{overflow-x:auto;background:var(--sheet);border:1px solid var(--rule);border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{position:sticky;top:0;background:var(--ledger-soft);text-align:left;font-weight:600;padding:8px 10px;border-bottom:1px solid var(--rule);white-space:nowrap;cursor:pointer;user-select:none}
+th.r,td.r{text-align:right}
+td{padding:7px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr.main{cursor:pointer}
+tbody tr.main:hover td{background:var(--paper)}
+tr.detail td{background:var(--paper);font-size:13px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px 24px;padding:6px 4px}
+.dgrid dt{font-size:12px;color:var(--muted)} .dgrid dd{margin:0}
+td.name{font-weight:600;min-width:230px}
+.sub{color:var(--muted);font-size:12px;font-weight:400}
+tfoot td{font-weight:650;border-top:2px solid var(--ledger);background:var(--ledger-soft)}
+tfoot tr.tkft td{background:var(--ochre-soft);color:var(--ochre);border-top:1px solid var(--ochre)}
+
+.stamp{display:inline-block;font-family:Consolas,"Cascadia Mono",monospace;font-size:12px;padding:1px 7px;border-radius:3px;border:1px solid;white-space:nowrap}
+.stamp.ok{color:var(--ok);background:var(--ok-soft);border-color:var(--ok)}
+.stamp.bad{color:var(--seal);background:var(--seal-soft);border-color:var(--seal)}
+.stamp.na{color:var(--muted);border-style:dashed;font-family:inherit}
+.tag{display:inline-block;padding:0 7px;border-radius:10px;font-size:12px;background:var(--ledger-soft);color:var(--ledger);margin:1px 3px 1px 0;white-space:nowrap}
+.con{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.sev{font-weight:650;white-space:nowrap}
+.sev.High{color:var(--seal)} .sev.Medium{color:var(--ochre)} .sev.Low{color:var(--muted)}
+.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:4px 24px;font-size:13px;margin:0;padding:0;list-style:none}
+.checks li{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px dashed var(--rule)}
+.checks b.ok{color:var(--ok)} .checks b.bad{color:var(--seal)}
+.recon.ok{color:var(--ok);font-weight:600} .recon.bad{color:var(--seal);font-weight:600} .recon.na{color:var(--muted)}
+.hidden{display:none!important}
+.banner{padding:10px 14px;border-radius:4px;margin-bottom:16px;background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok)}
+.banner.err{background:var(--seal-soft);color:var(--seal);border-color:var(--seal)}
+/* Inter-group loans */
+.verdict{border-left:5px solid var(--ledger);padding:12px 16px;background:var(--ledger-soft);border-radius:0 4px 4px 0;margin-bottom:14px}
+.verdict.sr{border-color:var(--seal);background:var(--seal-soft)}
+.verdict.prov{border-color:var(--ochre);background:var(--ochre-soft)}
+.verdict b{font-size:16px;display:block}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.step{border:1px solid var(--rule);border-radius:4px;padding:12px 14px;background:var(--sheet)}
+.step h3{margin:0 0 6px;font-size:14px}
+.step ul{margin:6px 0 0;padding-left:18px} .step li{margin:3px 0}
+.pick{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:14px}
+.pick label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}
+.pick select,.pick input{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:7px 10px;min-width:260px}
+.pick input{min-width:140px}
+.mx{border-collapse:separate;border-spacing:2px;font-size:11px;width:auto}
+.mx th{background:transparent;border:0;padding:2px;cursor:default;position:static;font-weight:500;color:var(--muted)}
+.mx th.col{writing-mode:vertical-rl;transform:rotate(180deg);height:160px;white-space:nowrap;text-align:left}
+.mx th.rowh{text-align:right;white-space:nowrap;padding-right:6px}
+.mx td{width:24px;height:22px;text-align:center;padding:0;border:0;border-radius:3px;font-weight:650;cursor:pointer}
+.mx td.self{background:var(--rule);cursor:default}
+.mx td.A{background:var(--ok-soft);color:var(--ok)} .mx td.P{background:var(--ledger-soft);color:var(--ledger)}
+.mx td.B{background:var(--seal-soft);color:var(--seal)} .mx td.C,.mx td.W{background:var(--ochre-soft);color:var(--ochre)}
+.mx td.Y{background:var(--seal-soft);color:var(--seal)} .mx td.N{background:var(--ok-soft);color:var(--ok)}
+.mx td:not(.self):hover{outline:2px solid var(--ink)}
+.keyrow{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--muted);margin:8px 0}
+.keyrow span b{display:inline-block;width:20px;text-align:center;border-radius:3px;margin-right:5px}
+table.inp td input,table.inp td select{width:96px;background:var(--sheet);border:1px solid var(--rule);border-radius:3px;padding:3px 6px;text-align:right;color:var(--ink)}
+table.inp td select{text-align:left;width:64px}
+table.inp td input{color:#0000FF}
+@media (prefers-color-scheme:dark){table.inp td input{color:#8AB4FF}}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.seg button{border:0;background:var(--sheet);padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ledger);color:#fff}
+
+.mix{display:grid;grid-template-columns:minmax(160px,max-content) 1fr 80px;gap:6px 12px;align-items:center;font-size:13px}
+.mix .bar{display:flex;height:16px;border-radius:2px;overflow:hidden;background:var(--ledger-soft)}
+.mix .bar span{display:block;height:100%}
+.mix .t{text-align:right;font-weight:600}
+.keyrow b{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px}
+td.neg{color:var(--seal);font-weight:600}
+.pan.bad{color:var(--seal);font-weight:650}
+.fs{display:inline-block;font-size:11px;padding:0 6px;border-radius:8px;background:var(--ochre-soft);color:var(--ochre);margin-left:4px}
+table.inp td select.cmp{width:84px}
+
+/* Table toolkit: search, custom filter, sort on every table */
+.tk{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 8px}
+.tk input[type=search]{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:6px 10px;min-width:220px}
+.tk .cnt{font-size:12px;color:var(--muted)}
+.tk .sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--ochre-soft);color:var(--ochre);border:1px solid var(--ochre);border-radius:12px;padding:1px 4px 1px 10px;font-size:12px}
+.chip button{all:unset;cursor:pointer;font-weight:700;padding:0 6px}
+.tkf{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--ledger-soft);border:1px solid var(--rule);border-radius:4px;padding:8px 10px;margin:0 0 8px}
+.tkf select,.tkf input{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:5px 8px}
+.tkf input{width:140px}
+th.tks{cursor:pointer}
+th .arw{color:var(--ochre)}
+.ovf{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.ovf input,.ovf select{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:7px 10px}
+.ovf input{min-width:240px}
+
+.subnav{display:flex;gap:4px;margin:0 0 16px;border-bottom:1px solid var(--rule)}
+.subnav button{background:transparent;border:0;border-bottom:3px solid transparent;padding:8px 14px;cursor:pointer;color:var(--muted);font-weight:500}
+.subnav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ledger);font-weight:650}
+
+@media (max-width:700px){.mast,main{padding-left:14px;padding-right:14px}.grid2{grid-template-columns:1fr}.toolbar input[type=search]{min-width:0;width:100%}}
+@media print{.mast label,nav.tabs,.toolbar{display:none}.mast{background:#fff;color:#000}[data-panel]{display:block!important}}
+</style>
+<header class="mast">
+  <div class="mast-top">
+    <div>
+      <h1>Alcove Group – Company Master</h1>
+      <p id="srcLine"></p>
+    </div>
+    <div class="ctrls" style="display:flex;gap:8px;flex-wrap:wrap">
+    <label class="btn" title="Load one or more MCA master-data workbooks (MasterData, Director Details, IndexOfCharges sheets)">Load MCA data
+      <input type="file" id="mcaIn" accept=".xlsx,.xls" multiple class="hidden"></label>
+    <a class="btn" href="https://docs.google.com/spreadsheets/d/1nK-tKjoSH2Y84YE-0rOIgQgvBA238mCUBp0fK5igdRg/edit" target="_blank" rel="noopener">Open data sheet</a>
+    <a class="btn" href="https://drive.google.com/drive/folders/1MO7nI9kXkk4ji1wcmwXZJGW9O_q0Rwef" target="_blank" rel="noopener">Open Drive folder</a>
+    <label class="btn" hidden title="Load a newer version of the Company Master workbook with the same columns">Load updated Company Master
+      <input type="file" id="fileIn" accept=".xlsx,.xlsm,.xls,.csv" class="hidden"></label>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-tab="register" aria-selected="true">Entity register</button>
+    <button role="tab" data-tab="dirreg" aria-selected="false">Director register</button>
+    <button role="tab" data-tab="capital" aria-selected="false">Capital</button>
+    <button role="tab" data-tab="fin" aria-selected="false">Group financials</button>
+    <button role="tab" data-tab="loans" aria-selected="false">Inter-group loans</button>
+    <button role="tab" data-tab="xh" aria-selected="false">Cross holding</button>
+    <button role="tab" data-tab="obs" aria-selected="false">Observations<span class="count" id="cntObs">0</span></button>
+  </nav>
+</header>
+
+<main>
+  <div id="banner" class="banner hidden"></div>
+  <dl class="ledger" id="ledger"></dl>
+
+  <section data-panel="register">
+    <div class="toolbar">
+      <input type="hidden" id="q">
+      <select id="fCon" aria-label="Constitution"></select>
+      <select id="fProj" aria-label="Project"></select>
+      <select id="fGst" aria-label="GST status"><option value="">All GST status</option><option value="reg">GST registered</option><option value="na">GST not applicable</option></select>
+      <select id="fSw" aria-label="Software"></select>
+      <select id="fDir" aria-label="Director"></select>
+      <span class="sp"></span>
+      <button class="lbtn" id="docBtn">Document links</button>
+      <button class="lbtn" id="clearF">Clear filters</button>
+      <button class="lbtn" data-export="reg">Download CSV</button>
+    </div>
+        <div id="docPane" class="panel hidden" style="margin-bottom:14px">
+      <h2>Document links</h2>
+      <p class="lead">Link certificates kept on this computer or a shared drive. Set a folder and a file-name pattern per document and links are built for every entity automatically; individual links can be set or overridden from each entity’s detail row (click the row). Tokens: <code>{GSTIN}</code>, <code>{PAN}</code>, <code>{CIN}</code>, <code>{NAME}</code>. A full web link (SharePoint, OneDrive, Google Drive) can also be pasted. Settings are saved in this browser.</p>
+      <div class="tablewrap"><table class="inp" id="tDocSet"></table></div>
+      <div class="toolbar" style="margin-top:10px">
+        <button class="lbtn" id="docSave" style="background:var(--ledger);color:#fff;border-color:var(--ledger)">Save</button>
+        <button class="lbtn" id="docTpl">Download link template</button>
+        <label class="lbtn">Import links (Excel / CSV)<input type="file" id="docIn" accept=".xlsx,.xls,.csv" class="hidden"></label>
+        <button class="lbtn" id="docClose">Close</button>
+        <span class="small">Template columns: Company, PAN, Document (GST / PAN / COI / MOA / Other), Link</span>
+      </div>
+    </div>
+    <p class="small" id="regCount"></p>
+    <div class="tablewrap"><table id="tReg"></table></div>
+  </section>
+
+  <section data-panel="dirreg" class="hidden">
+    <dl class="ledger" id="drLedger" style="border-top-color:var(--ledger)"></dl>
+    <div class="panel">
+      <div class="toolbar" style="margin-bottom:4px"><h2 style="margin:0">Director register</h2><span class="sp"></span>
+        <label class="lbtn">Import PAN / DOB / Aadhaar (Excel or CSV)<input type="file" id="drIn" accept=".xlsx,.xls,.csv" class="hidden"></label>
+        <button class="lbtn" id="drTpl">Download entry template</button>
+        <button class="lbtn" data-export="dir">Download CSV</button></div>
+      <p class="lead">One row per individual across all group entities. DIN comes from MCA master data. PAN, date of birth and Aadhaar are entered in the blue fields or imported, and are saved in this browser on this computer only. Only the <b>last four digits of Aadhaar</b> are kept and shown masked; if a full number is entered or imported, the other digits are discarded. PAN is checked for format, the 4th character P (individual) and the 5th character matching the surname initial.</p>
+      <div class="tablewrap"><table class="inp" id="tDir"></table></div>
+    </div>
+  </section>
+
+  <section data-panel="capital" class="hidden">
+    <p class="lead">Amounts in ₹ lakh. Paid-up capital is reconciled to the share count in the shareholding list as on 31-03-2026 at ₹10 face value, or the face value and preference capital shown in the company’s financial statements where loaded.</p>
+    <div class="toolbar"><select id="fCap" aria-label="Capital filter"><option value="">All companies</option><option value="miss">Capital not captured</option><option value="bad">Reconciliation difference</option></select><span class="sp"></span><button class="lbtn" data-export="cap">Download CSV</button></div>
+    <div class="tablewrap"><table id="tCap"></table></div>
+  </section>
+
+  <section data-panel="fin" class="hidden">
+    <dl class="ledger" id="finLedger" style="border-top-color:var(--ochre)"></dl>
+    <div class="panel">
+      <h2>Funding mix by company</h2>
+      <p class="lead">Borrowings as at 31-03-2026, ₹ lakh, split by source. Hover a segment for the amount.</p>
+      <div class="keyrow"><span><b style="background:var(--c-co)"></b>Director / relative</span><span><b style="background:var(--seal)"></b>Group entity (inter-group loan)</span><span><b style="background:var(--c-firm)"></b>Other body corporate / others</span><span><b style="background:var(--ochre)"></b>Bank / NBFC</span></div>
+      <div id="mixBars" class="mix"></div>
+    </div>
+    <div class="panel">
+      <div class="toolbar" style="margin-bottom:4px"><h2 style="margin:0">Balance sheet and results summary</h2><span class="sp"></span><button class="lbtn" data-export="fin">Download CSV</button></div>
+      <p class="lead">₹ lakh. Click a row to see lenders, loans given and source details. All figures converted to ₹ lakh from each file’s own unit. Red figures involve group entities.</p>
+      <div class="toolbar"><select id="fKind" aria-label="Entity type"><option value="">All entities</option><option value="company">Companies</option><option value="llp">LLPs</option><option value="firm">Firms</option><option value="grp">With inter-group loans</option></select></div>
+      <div class="tablewrap"><table id="tFin"></table></div>
+    </div>
+    <div class="panel">
+      <h2>Lenders to the group</h2>
+      <p class="lead">Every lender appearing in the 31-03-2026 borrowing schedules, aggregated across companies. A red PAN means the same PAN is shown for different lenders, or the same lender carries different PANs, across the working papers.</p>
+      <div class="tablewrap"><table id="tLenders"></table></div>
+    </div>
+  </section>
+
+  <section data-panel="loans" class="hidden">
+    <dl class="ledger" id="loanLedger" style="border-top-color:var(--ochre)"></dl>
+
+    <div class="panel">
+      <h2>Check a proposed loan</h2>
+      <p class="lead">Pick the lending and borrowing company. Conclusions use the shareholding list as on 31-03-2026, paid-up capital from the Company Master and the lender inputs further down this page.</p>
+      <div class="pick">
+        <label>Lender<select id="lnL"></select></label>
+        <label>Borrower<select id="lnB"></select></label>
+        <label>Proposed amount (₹ lakh)<input type="number" id="lnAmt" min="0" step="0.01" placeholder="Optional"></label>
+      </div>
+      <div id="lnOut"></div>
+    </div>
+
+    <div class="panel">
+      <div class="toolbar" style="margin-bottom:4px"><h2 style="margin:0">Existing inter-group loans (31-03-2026)</h2><span class="sp"></span><button class="lbtn" data-export="exist">Download CSV</button></div>
+      <p class="lead">Taken from the borrowers’ audited financial statements. Record the compliance evidence you have verified; the status column updates and is saved in this browser.</p>
+      <div class="tablewrap"><table class="inp" id="tExist"></table></div>
+    </div>
+    <div class="panel">
+      <div class="toolbar" style="margin-bottom:4px">
+        <h2 style="margin:0">Group loan matrix</h2><span class="sp"></span>
+        <div class="seg" role="group" aria-label="Matrix view">
+          <button id="mxRoute" aria-pressed="true">Companies Act route</button>
+          <button id="mxDD" aria-pressed="false">Deemed dividend exposure</button>
+        </div>
+      </div>
+      <p class="lead">Rows lend, columns borrow. Click a cell to load that pair into the checker above.</p>
+      <div class="keyrow" id="mxKey"></div>
+      <div class="tablewrap" style="padding:8px"><table class="mx" id="mx"></table></div>
+    </div>
+
+    <div class="panel">
+      <div class="toolbar" style="margin-bottom:4px"><h2 style="margin:0">Lender eligibility</h2><span class="sp"></span><button class="lbtn" data-export="lend">Download CSV</button></div>
+      <p class="lead">Blue fields are inputs, in ₹ lakh, saved in this browser only. Companies tagged FS 2026 are pre-filled from their audited financial statements: borrowings from banks / bodies corporate, P&L surplus as free reserves and accumulated profits, securities premium, and loans given plus investments in securities as Sec 186 exposure. Default status is pre-set to N only where there are no such borrowings. <button class="lbtn" id="linReset" style="padding:2px 8px">Reset to FS figures</button></p>
+      <div class="tablewrap"><table class="inp" id="tLend"></table></div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <h2>Shareholder classification</h2>
+        <p class="lead">These settings drive every test on this page. SHB, SB and OTHERS are assumptions until confirmed.</p>
+        <div class="tablewrap"><table class="inp" id="tHold"></table></div>
+      </div>
+      <div class="panel">
+        <h2>Basis and assumptions</h2>
+        <ul class="small" style="padding-left:18px;margin:0;color:var(--ink)">
+          <li><b>Sec 185 exemption</b> (private companies, Notfn. GSR 464(E) as amended 13-06-2017): no body corporate in share capital; borrowings from banks, FIs or bodies corporate below the lower of 2× paid-up capital or ₹50 crore; no repayment default subsisting.</li>
+          <li><b>Sec 185(2)</b>: where the exemption is not available and the borrower is a private company in which a lender’s director is a director or member, a Special Resolution is needed and the loan must be used for the borrower’s principal business.</li>
+          <li><b>Sec 186</b> applies to every loan: unanimous Board resolution, limit of the higher of 60% of (paid-up + free reserves + securities premium) or 100% of (free reserves + securities premium), interest not below the G-sec yield for the closest tenor, register MBP-2.</li>
+          <li><b>Deemed dividend</b>, Sec 2(40)(e) of the Income-tax Act 2025 (formerly Sec 2(22)(e)): a shareholder holds 10% or more of voting power in the lender and 20% or more in the borrower, or the borrower itself holds 10% or more in the lender. Taxable up to the lender’s accumulated profits.</li>
+          <li>Entities not in the shareholding list, LLPs and firms are excluded from the matrix until their holding or partner details are available.</li>
+          <li>This page supports, and does not replace, a legal and tax review of each loan.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section data-panel="xh" class="hidden">
+    <div class="subnav" role="tablist" aria-label="Cross holding views">
+      <button data-xsub="hold" aria-selected="true">Holdings</button>
+      <button data-xsub="bo" aria-selected="false">Individual beneficial ownership</button>
+    </div>
+    <div data-xpane="bo" class="hidden">
+      <dl class="ledger" id="boLedger" style="border-top-color:var(--seal)"></dl>
+      <div class="panel">
+        <div class="toolbar" style="margin-bottom:4px"><h2 style="margin:0">Look-through beneficial ownership by individual</h2><span class="sp"></span>
+          <select id="boSrc" aria-label="Shareholding source"><option value="list">Source: shareholding list 31-03-2026</option><option value="fs">Source: financial statements where loaded</option></select>
+          <select id="boCl" aria-label="Cluster"><option value="Alcove / Shroff group">Alcove / Shroff group</option><option value="Co-owner group (Sarda until Sep 2026)">Co-owner group (Sarda until Sep 2026)</option><option value="">All entities</option></select>
+          <div class="seg" role="group" aria-label="Value shown"><button data-bov="eff" aria-pressed="true">Effective %</button><button data-bov="dir" aria-pressed="false">Direct %</button><button data-bov="ind" aria-pressed="false">Indirect %</button></div>
+        </div>
+        <p class="lead">Each individual’s holding is traced through every corporate shareholder: direct % plus (corporate holder’s % in the company × individual’s % in that holder), repeated up the chain. For example, Jaya Dealers: Yashaswi Shroff 14.47% direct + 71.06% (Alcove Construction) × 49.40% = 49.57% effective. Holdings that cannot be traced to a named individual are shown as unidentified. Hover a cell for the breakdown.</p>
+        <div class="tablewrap"><table id="tBO"></table></div>
+      </div>
+      <div class="panel">
+        <h2>Beneficial ownership detail and SBO assessment</h2>
+        <p class="lead">One row per company and individual, with the holding path. SBO (significant beneficial owner, Sec 90 and the SBO Rules 2018) applies where an individual holds 10% or more <b>indirectly, or indirectly together with direct holdings</b>. Where the member is a company, the indirect holding counts if the individual holds a majority stake (more than 50%) in that member or its ultimate holding company, or exercises control or significant influence, alone or acting together.</p>
+        <div class="tablewrap"><table id="tBOD"></table></div>
+      </div>
+    </div>
+    <div data-xpane="hold">
+    <dl class="ledger" id="xhLedger" style="border-top-color:var(--c-firm)"></dl>
+    <div class="panel">
+      <div class="toolbar" style="margin-bottom:4px"><h2 style="margin:0">Shareholding matrix – shareholding list as on 31-03-2026</h2><span class="sp"></span>
+        <div class="seg" role="group" aria-label="Matrix values"><button data-xv="both" aria-pressed="true">Shares and %</button><button data-xv="shares" aria-pressed="false">No. of shares</button><button data-xv="pct" aria-pressed="false">% holding</button></div></div>
+      <p class="lead">Rows are companies, columns are shareholders. Shading deepens with the % held; corporate shareholders are highlighted in the header. Bottom row counts the companies each shareholder holds.</p>
+      <div class="tablewrap"><table id="tXH"></table></div>
+    </div>
+    <div class="panel">
+      <h2>Corporate ownership map</h2>
+      <p class="lead">Every company or LLP that holds shares or capital in another entity, from the shareholding list and the financial statements. Line thickness and colour follow the % held (red above 50%, amber 20–50%, blue below 20%); labels show holdings of 10% and above – hover any line for its exact %.</p>
+      <div class="tablewrap" style="padding:8px"><svg id="xhMap" role="img" aria-label="Corporate ownership map"></svg></div>
+    </div>
+    <div class="panel">
+      <h2>Inter-corporate holdings</h2>
+      <p class="lead">Company-to-company and company-to-LLP holdings with relationship classification. Subsidiary means more than 50% of equity (Sec 2(87)); associate means 20% or more (Sec 2(6)); for LLPs the partner’s share of capital is shown.</p>
+      <div class="tablewrap"><table id="tXC"></table></div>
+    </div>
+    <div class="grid2">
+      <div class="panel" style="margin-bottom:0"><h2>Shareholder summary</h2><p class="lead">Number of companies held by each shareholder, by size of holding (shareholding list).</p><div class="tablewrap"><table id="tXS"></table></div></div>
+      <div class="panel" style="margin-bottom:0"><h2>Shareholding list vs financial statements</h2><p class="lead">Holdings per the shareholding list compared with the shareholder notes in each company’s 2025-26 financial statements, where loaded.</p><div class="tablewrap"><table id="tXR"></table></div></div>
+    </div>
+    <div class="panel" style="margin-top:18px">
+      <h2>Other co-owner companies – shareholding per financial statements</h2>
+      <p class="lead">Companies not in the shareholding list, taken from the shareholder notes in their financial statements. These sit outside the Shroff-promoted group.</p>
+      <div class="tablewrap"><table id="tXO"></table></div>
+    </div>
+    </div>
+  </section>
+
+  <section data-panel="obs" class="hidden">
+    <div class="panel">
+      <h2>Checks performed on every entity</h2>
+      <p class="lead">Format and cross-field checks. A clean result here means the master data is internally consistent; it does not replace a periodic MCA and GST portal verification.</p>
+      <ul class="checks" id="checks"></ul>
+    </div>
+    <div class="toolbar"><select id="fSev" aria-label="Severity"><option value="">All severities</option><option>High</option><option>Medium</option><option>Low</option></select><span class="sp"></span><button class="lbtn" data-export="obs">Download CSV</button></div>
+    <div class="tablewrap"><table id="tObs"></table></div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="text/plain" id="app">
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const pad = n => String(n).padStart(2, "0");
+const fmtDate = d => d ? `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}` : "";
+const INR = new Intl.NumberFormat("en-IN"), INR2 = new Intl.NumberFormat("en-IN", {minimumFractionDigits:2, maximumFractionDigits:2});
+const lakh = v => v == null ? "" : INR2.format(v / 1e5);
+const crore = v => INR2.format(v / 1e7);
+const list = a => a.join(", ").replace(/\.$/, "");
+const isNA = v => v == null || /^(not applicable|na|n\/a|nil|-|)$/i.test(String(v).trim());
+
+/* ---------- Reference data ---------- */
+const SEED = window.__SEED;
+const SHARES = SEED.shares;                       // shareholding list 31-03-2026
+const coKey = s => norm(String(s).toLowerCase().replace(/\(.*?\)/g, "").replace(/\b(private|pvt|limited|ltd|llp|the)\b\.?/g, ""));
+const SHARE_BY_KEY = Object.fromEntries(Object.entries(SHARES).map(([k, v]) => [coKey(k), v]));
+const NIC = {"45":"Construction","51":"Wholesale trade","70":"Real estate","68":"Real estate","43":"Specialised construction","24":"Manufacture of basic metals","41":"Construction of buildings","42":"Civil engineering"};
+const GSTCH = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+function gstChecksum(g){ let s = 0; for (let i = 0; i < 14; i++) { const p = GSTCH.indexOf(g[i]) * (i % 2 ? 2 : 1); s += Math.floor(p / 36) + p % 36; } return GSTCH[(36 - s % 36) % 36]; }
+const RX = {pan:/^[A-Z]{3}[ABCFGHLJPTK][A-Z][0-9]{4}[A-Z]$/, cin:/^[LU][0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6}$/, llpin:/^[A-Z]{3}-[0-9]{4}$/, gst:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/};
+
+/* ---------- Enrich and test each entity ---------- */
+function enrich(raw){
+  const name = String(raw.name || "").trim();
+  const pan = String(raw.pan || "").toUpperCase().replace(/\s/g, "");
+  const cin = isNA(raw.cin) ? "" : String(raw.cin).toUpperCase().replace(/\s/g, "");
+  const gst = isNA(raw.gst) ? "" : String(raw.gst).toUpperCase().replace(/\s/g, "");
+  const doi = raw.doi ? new Date(raw.doi) : null;
+  const con = /\bLLP\b/i.test(name) || RX.llpin.test(cin) ? "LLP" : pan[3] === "F" ? "Partnership firm" : pan[3] === "C" || /pvt|private|limited|ltd/i.test(name) ? "Private company" : "Other";
+  const projects = String(raw.cat || "").split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+  const nicCode = RX.cin.test(cin) ? cin.slice(1, 6) : "";
+  const share = SHARE_BY_KEY[coKey(name)];
+  const e = {...raw, name, pan, cin, gst, doi, con, projects:projects.length ? projects : ["Not stated"],
+    nicCode, nic: nicCode ? (NIC[nicCode.slice(0, 2)] || `Division ${nicCode.slice(0, 2)}`) : "",
+    auth: typeof raw.auth === "number" ? raw.auth : null, paid: typeof raw.paid === "number" ? raw.paid : null,
+    shares: share ?? null, checks:{}};
+  const c = e.checks, first = name.replace(/^(the|m\/s\.?)\s+/i, "")[0]?.toUpperCase();
+  c.pan = RX.pan.test(pan);
+  c.panType = con === "Private company" ? pan[3] === "C" : con === "LLP" || con === "Partnership firm" ? pan[3] === "F" : true;
+  c.panName = pan[4] === first;
+  c.cin = con === "Partnership firm" ? !cin : con === "LLP" ? RX.llpin.test(cin) : RX.cin.test(cin);
+  c.cinYear = RX.cin.test(cin) && doi ? cin.slice(8, 12) === String(doi.getFullYear()) : true;
+  c.cinPtc = RX.cin.test(cin) && con === "Private company" ? cin.slice(12, 15) === "PTC" : true;
+  c.gst = !gst || RX.gst.test(gst);
+  c.gstPan = !gst || gst.slice(2, 12) === pan;
+  c.gstCk = !gst || (RX.gst.test(gst) && gstChecksum(gst) === gst[14]);
+  c.gstState = !gst || gst.slice(0, 2) === "19";
+  c.capOrder = e.auth == null || e.paid == null || e.paid <= e.auth;
+  e.idOk = Object.values(c).every(Boolean);
+  if (con === "Private company") {
+    if (e.paid == null) e.recon = "na";
+    else if (e.shares == null) e.recon = "noshare";
+    else { const fsr = (SEED.fin || []).find(f => coKey(f.name) === coKey(name)); e.fv = fsr && fsr.fv || 10; e.pref = fsr && fsr.prefCap ? fsr.prefCap * 1e5 : 0;
+      e.recon = Math.abs(e.shares * e.fv + e.pref - e.paid) < 1000 ? "ok" : "bad"; }
+  } else e.recon = "nc";
+  return e;
+}
+const CHECK_LABEL = {
+  pan:"PAN structure valid", panType:"PAN 4th character matches constitution (C / F)", panName:"PAN 5th character matches name initial",
+  cin:"CIN / LLPIN format matches constitution", cinYear:"CIN year equals year of incorporation", cinPtc:"CIN carries PTC for private companies",
+  gst:"GSTIN structure valid", gstPan:"GSTIN embeds the entity PAN", gstCk:"GSTIN check digit valid", gstState:"GSTIN state code 19 (West Bengal)",
+  capOrder:"Paid-up capital not above authorised"
+};
+
+/* ---------- Observations ---------- */
+function observations(E){
+  const O = [], add = (sev, entity, obs, action) => O.push({sev, entity, obs, action});
+  for (const e of E) for (const [k, ok] of Object.entries(e.checks)) if (!ok)
+    add("High", e.name, `Failed check: ${CHECK_LABEL[k]}`, "Correct the master from the PAN card, Certificate of Incorporation or GST REG-06.");
+  const capMiss = E.filter(e => e.con === "Private company" && (e.auth == null || e.paid == null));
+  if (capMiss.length) add("High", `${capMiss.length} companies`, `Authorised / paid-up capital not captured: ${list(capMiss.map(e => e.name))}.`, "Update from MCA master data or the latest MGT-7. If any company is struck off or amalgamated, record its status instead.");
+  const noShare = E.filter(e => e.con === "Private company" && e.shares == null);
+  if (noShare.length) add("Medium", `${noShare.length} companies`, `Not covered in the shareholding list as on 31-03-2026: ${list(noShare.map(e => e.name))}.`, "Confirm current status (active, dormant, struck off, amalgamated) and add to the shareholding list if active.");
+  for (const e of E.filter(e => e.recon === "bad"))
+    add("High", e.name, `Paid-up capital ₹${lakh(e.paid)} lakh does not equal ${INR.format(e.shares)} shares × ₹${e.fv} = ₹${lakh(e.shares * e.fv)} lakh (implied ₹${INR2.format(e.paid / e.shares)} per share).`, "Reconcile with register of members, SH-7 / PAS-3 filings and audited balance sheet; check for preference or partly paid shares.");
+  const gNA = E.filter(e => !e.gst && e.projects.some(p => !/no project|not stated/i.test(p)));
+  if (gNA.length) add("Medium", `${gNA.length} entities`, `Linked to a project but not GST registered: ${[...new Set(gNA.flatMap(e => e.projects))].join(", ")} (${gNA.length} entities).`, "Confirm the landowner arrangement. A landowner that sells its share of units before the completion certificate is generally liable to register and pay GST.");
+  const trade = E.filter(e => e.nic === "Wholesale trade");
+  if (trade.length) add("Low", `${trade.length} companies`, `CIN shows a wholesale-trade NIC code: ${list(trade.map(e => e.name))}.`, "Check that the main object clause and the principal business activity reported in MGT-7 reflect the real estate activity actually carried on.");
+  for (const e of E.filter(e => /\.\.|\s{2,}/.test(e.name))) add("Low", e.name, "Name has irregular punctuation or spacing.", "Match the name exactly to the Certificate of Incorporation.");
+  const sfx = new Set(E.filter(e => e.con === "Private company").map(e => /private limited/i.test(e.name) ? "Private Limited" : "Pvt. Ltd."));
+  if (sfx.size > 1) add("Low", "All companies", "Company names use both “Pvt. Ltd.” and “Private Limited”.", "Use the exact registered name across the master, ERP and statutory filings.");
+  const addrs = {}; E.forEach(e => { const k = norm(e.addr); (addrs[k] ||= []).push(e); });
+  const main = Object.values(addrs).sort((a, b) => b.length - a.length)[0] || [];
+  for (const e of E.filter(e => !main.includes(e))) add("Low", e.name, `Registered office differs from the group address: ${e.addr}.`, "Confirm against INC-22 / MCA master data.");
+  const nonCo = E.filter(e => e.con !== "Private company");
+  if (nonCo.length) add("Low", `${nonCo.length} LLPs / firms`, `Capital contribution not captured for ${list(nonCo.map(e => e.name))}.`, "Add partners’ contribution from the LLP agreement / Form 8 or partnership deed.");
+  const rank = {High:0, Medium:1, Low:2};
+  return O.sort((a, b) => rank[a.sev] - rank[b.sev]);
+}
+
+/* ---------- State ---------- */
+let E = [], OBS = [], SRC = {};
+const F = {q:"", con:"", proj:"", gst:"", sw:"", dir:""};
+let sortReg = {k:"sr", d:1}, openRow = null;
+
+function load(rows, src){
+  E = rows.filter(r => r.name).map(enrich);
+  for (const e of E) { const m = typeof mcaFor === "function" ? mcaFor(e) : null; if (m && m.type === "company" && e.paid == null && m.paid != null) { e.paid = m.paid; e.auth = m.auth; e.capSrc = "MCA"; e.recon = e.shares == null ? "noshare" : Math.abs(e.shares * (e.fv || 10) + (e.pref || 0) - e.paid) < 1000 ? "ok" : "bad"; } }
+  OBS = observations(E); SRC = src;
+  $("#srcLine").textContent = `Source: ${src.file} (${E.length} entities)  |  Shareholding 31-03-2026  |  Financial statements: ${FIN.length} entities, FY 2025-26`;
+  buildFilters(); renderAll();
+}
+
+/* ---------- Rendering ---------- */
+const CON_COLOR = {"Private company":"var(--c-co)", "LLP":"var(--c-llp)", "Partnership firm":"var(--c-firm)", "Other":"var(--muted)"};
+function renderLedger(){
+  const co = E.filter(e => e.con === "Private company");
+  const auth = co.reduce((a, e) => a + (e.auth || 0), 0), paid = co.reduce((a, e) => a + (e.paid || 0), 0);
+  const gstReg = E.filter(e => e.gst).length, hi = OBS.filter(o => o.sev === "High").length;
+  const cnt = k => E.filter(e => e.con === k).length;
+  $("#ledger").innerHTML = [
+    ["Entities", INR.format(E.length), `${cnt("Private company")} companies, ${cnt("LLP")} LLPs, ${cnt("Partnership firm")} firms`],
+    ["GST registered", `${gstReg} of ${E.length}`, `${E.length - gstReg} not applicable`],
+    ["Authorised capital", `₹${crore(auth)} cr`, "Companies with data"],
+    ["Paid-up capital", `₹${crore(paid)} cr`, `${co.filter(e => e.paid != null).length} of ${co.length} companies captured`],
+    ["Identifier checks", `${E.filter(e => e.idOk).length} of ${E.length}`, "Entities passing every check"],
+    ["Observations", INR.format(OBS.length), `${hi} high priority`, hi ? "bad" : ""]
+  ].map(([k, v, s, c]) => `<div><dt>${k}</dt><dd class="${c || ""}">${v}<small>${esc(s)}</small></dd></div>`).join("");
+  $("#cntObs").textContent = OBS.length;
+}
+
+function renderTimeline(){
+  const svg = $("#timeline"), withD = ovList().filter(e => e.doi);
+  if (!withD.length) { svg.innerHTML = ""; return; }
+  const y0 = Math.floor(Math.min(...withD.map(e => e.doi.getFullYear())) / 5) * 5, y1 = new Date().getFullYear() + 1;
+  const W = Math.max(900, (y1 - y0) * 24), r = 4.5, step = 11, colW = 11, perCol = 10, left = 24, right = 24;
+  const byYear = {}; withD.sort((a, b) => a.doi - b.doi).forEach(e => (byYear[e.doi.getFullYear()] ||= []).push(e));
+  const tallest = Math.min(perCol, Math.max(...Object.values(byYear).map(a => a.length)));
+  const H = 56 + tallest * step, base = H - 32;
+  const x = yr => left + (yr - y0) / (y1 - y0) * (W - left - right);
+  let s = `<line class="axis" x1="${left}" x2="${W - right}" y1="${base + 8}" y2="${base + 8}"/>`;
+  for (let y = y0; y <= y1; y += 5) s += `<line class="axis" x1="${x(y)}" x2="${x(y)}" y1="${base + 8}" y2="${base + 13}"/><text x="${x(y)}" y="${base + 26}" text-anchor="middle">${y}</text>`;
+  for (const [yr, list] of Object.entries(byYear)) {
+    const ncols = Math.ceil(list.length / perCol);
+    list.forEach((e, i) => {
+      const cx = x(+yr) + (Math.floor(i / perCol) - (ncols - 1) / 2) * colW, cy = base - (i % perCol) * step;
+      s += `<circle class="dot" cx="${cx}" cy="${cy}" r="${r}" fill="${CON_COLOR[e.con]}"><title>${esc(e.name)}\n${fmtDate(e.doi)} | ${esc(e.con)}</title></circle>`;
+    });
+    if (list.length >= 3) s += `<text class="val" x="${x(+yr)}" y="${base - Math.min(perCol, list.length) * step - 2}" text-anchor="middle">${yr}: ${list.length}</text>`;
+  }
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("width", W); svg.setAttribute("height", H);
+  svg.innerHTML = s;
+  $("#tlLegend").innerHTML = Object.entries(CON_COLOR).filter(([k]) => E.some(e => e.con === k)).map(([k, c]) => `<span><i style="background:${c}"></i>${k} (${E.filter(e => e.con === k).length})</span>`).join("");
+}
+
+function bars(el, counts, onClick, alt){
+  const srt = {desc:(a, b) => b[1] - a[1], asc:(a, b) => a[1] - b[1], az:(a, b) => a[0].localeCompare(b[0]), za:(a, b) => b[0].localeCompare(a[0])}[OVF.sort];
+  const items = Object.entries(counts).sort(srt), max = Math.max(1, ...items.map(i => i[1]));
+  el.innerHTML = items.map(([k, n]) => `<span>${onClick ? `<button data-v="${esc(k)}">${esc(k)}</button>` : esc(k)}</span><span class="track"><span class="fill ${alt ? "alt" : ""}" style="display:block;width:${n / max * 100}%"></span></span><span class="n">${n}</span>`).join("");
+  if (onClick) el.querySelectorAll("button").forEach(b => b.onclick = () => onClick(b.dataset.v));
+}
+const tally = (fn, arr = ovList()) => arr.reduce((m, e) => { for (const k of [].concat(fn(e))) if (k) m[k] = (m[k] || 0) + 1; return m; }, {});
+function renderOverview(){ return;
+  buildOvFilters(); const ovN = ovList().length; $("#ovCnt").textContent = `${ovN} of ${E.length} entities in charts`;
+  renderTimeline();
+  bars($("#barProject"), tally(e => e.projects), v => goRegister({proj:v}));
+  bars($("#barNic"), tally(e => e.nic || (e.con === "LLP" ? "LLP (no NIC in LLPIN)" : "Firm (no CIN)")), null, true);
+  bars($("#barCon"), tally(e => e.con), v => goRegister({con:v}));
+  bars($("#barGst"), tally(e => e.gst ? "GST registered" : "GST not applicable"), v => goRegister({gst: v.startsWith("GST reg") ? "reg" : "na"}), true);
+  bars($("#barSw"), tally(e => e.sw || "Not stated"), v => goRegister({sw:v}));
+}
+function goRegister(f){ Object.assign(F, {q:"", con:"", proj:"", gst:"", sw:"", dir:""}, f); syncFilterUI(); selectTab("register"); renderRegister(); }
+
+function buildFilters(){
+  const opt = (sel, label, vals) => { sel.innerHTML = `<option value="">${label}</option>` + vals.map(v => `<option>${esc(v)}</option>`).join(""); };
+  opt($("#fCon"), "All constitutions", [...new Set(E.map(e => e.con))]);
+  opt($("#fProj"), "All projects", [...new Set(E.flatMap(e => e.projects))].sort());
+  opt($("#fSw"), "All software", [...new Set(E.map(e => e.sw || "Not stated"))]);
+  opt($("#fDir"), "All directors / partners", [...new Set(E.flatMap(e => dirsFor(e).list.map(d => d.name)))].sort());
+  syncFilterUI();
+}
+function syncFilterUI(){ $("#q").value = F.q; $("#fCon").value = F.con; $("#fProj").value = F.proj; $("#fGst").value = F.gst; $("#fSw").value = F.sw; $("#fDir").value = F.dir; }
+
+const stamp = (v, ok, na) => !v ? `<span class="stamp na">${na}</span>` : `<span class="stamp ${ok ? "ok" : "bad"}">${esc(v)}</span>`;
+const REG = [
+  {k:"sr", h:"Sr", r:true, f:e => e.sr ?? "", s:e => +e.sr || 0},
+  {k:"name", h:"Entity", f:e => `<span class="con" style="background:${CON_COLOR[e.con]}"></span>${esc(e.name)}<div class="sub">${esc(e.con)}</div>`, s:e => e.name.toLowerCase(), csv:e => e.name},
+  {k:"proj", h:"Project", f:e => e.projects.map(p => `<span class="tag">${esc(p)}</span>`).join(""), s:e => e.projects.join(), csv:e => e.projects.join("; ")},
+  {k:"doi", h:"Incorporated", f:e => fmtDate(e.doi), s:e => e.doi ? e.doi.getTime() : 0, csv:e => fmtDate(e.doi)},
+  {k:"cin", h:"CIN / LLPIN", f:e => stamp(e.cin, e.checks.cin && e.checks.cinYear && e.checks.cinPtc, "Not applicable"), s:e => e.cin, csv:e => e.cin || "Not applicable"},
+  {k:"pan", h:"PAN", f:e => stamp(e.pan, e.checks.pan && e.checks.panType && e.checks.panName, "Missing"), s:e => e.pan, csv:e => e.pan},
+  {k:"gst", h:"GSTIN", f:e => stamp(e.gst, e.checks.gst && e.checks.gstPan && e.checks.gstCk && e.checks.gstState, "Not applicable"), s:e => e.gst, csv:e => e.gst || "Not applicable"},
+  {k:"paid", h:"Paid-up (₹ lakh)", r:true, f:e => lakh(e.paid), s:e => e.paid ?? -1, csv:e => e.paid == null ? "" : (e.paid / 1e5).toFixed(2)},
+  {k:"dir", h:"Directors / partners", f:e => { const d = dirsFor(e); return d.list.length ? d.list.map(x => esc(x.name)).join("<br>") + `<div class="sub">${d.src === "MCA" ? "MCA master data" : "FS signatories"}</div>` : `<span class="small">Not available</span>`; }, s:e => dirsFor(e).list.map(x => x.name).join(), csv:e => dirsFor(e).list.map(x => x.name).join("; ")},
+  {k:"docs", h:"Documents", f:e => docChips(e), s:e => docLinks(e).length, csv:e => docLinks(e).map(d => `${d.k}: ${d.path}`).join("; ")},
+  {k:"sw", h:"Software", f:e => esc(e.sw), s:e => e.sw || "", csv:e => e.sw}
+];
+function filtered(){
+  const q = norm(F.q);
+  return E.filter(e => (!q || norm([e.name, e.cin, e.pan, e.gst, e.addr, e.projects.join(" ")].join(" ")).includes(q)) &&
+    (!F.con || e.con === F.con) && (!F.proj || e.projects.includes(F.proj)) &&
+    (!F.gst || (F.gst === "reg" ? !!e.gst : !e.gst)) && (!F.sw || (e.sw || "Not stated") === F.sw) && (!F.dir || dirsFor(e).list.some(d => d.name === F.dir)));
+}
+function renderRegister(){
+  const col = REG.find(c => c.k === sortReg.k);
+  const rows = filtered().sort((a, b) => { const x = col.s(a), y = col.s(b); return (x > y ? 1 : x < y ? -1 : 0) * sortReg.d; });
+  $("#regCount").textContent = `${rows.length} of ${E.length} entities. Click a row for full details.`;
+  const head = `<thead><tr>${REG.map(c => `<th data-k="${c.k}" class="${c.r ? "r" : ""}">${c.h}${sortReg.k === c.k ? (sortReg.d > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr></thead>`;
+  const body = rows.map(e => `<tr class="main" data-sr="${esc(e.sr)}">${REG.map(c => `<td class="${c.r ? "r" : ""} ${c.k === "name" ? "name" : ""}">${c.f(e)}</td>`).join("")}</tr>` +
+    (openRow === String(e.sr) ? `<tr class="detail"><td colspan="${REG.length}"><dl class="dgrid">
+      <div><dt>Registered office</dt><dd>${esc(e.addr)}</dd></div>
+      <div><dt>Industry per CIN</dt><dd>${e.nicCode ? `${e.nicCode} – ${esc(e.nic)}` : "Not applicable"}</dd></div>
+      <div><dt>Authorised capital</dt><dd>${e.auth == null ? "Not captured" : `₹${lakh(e.auth)} lakh`}</dd></div>
+      <div><dt>Paid-up capital</dt><dd>${e.paid == null ? "Not captured" : `₹${lakh(e.paid)} lakh`}</dd></div>
+      <div><dt>Shares per shareholding list</dt><dd>${e.shares == null ? "Not in list" : INR.format(e.shares)}</dd></div>
+      <div><dt>Checks</dt><dd>${Object.values(e.checks).filter(Boolean).length} of ${Object.keys(e.checks).length} passed</dd></div>
+    </dl>${(() => { const d = dirsFor(e), m = mcaFor(e); if (!d.list.length && !m) return "";
+      const open = m ? m.charges.filter(c => !c.satisfied) : [];
+      return `<div style="padding:4px"><b>Directors / designated partners</b> <span class="small">(${d.src === "MCA" ? `MCA master data – ${esc(m.file)}` : "signatories on 2025-26 financial statements; DIN and appointment dates not available"})</span>
+        <table style="width:auto;min-width:640px;margin-top:4px"><thead><tr><th>Name</th><th>DIN / DPIN</th><th>Designation</th><th>Category</th><th>Appointed</th><th>Signatory</th></tr></thead><tbody>${
+        d.list.map(x => `<tr><td>${esc(x.name)}</td><td>${x.din ? `<span class="stamp ok">${esc(x.din)}</span>` : ""}</td><td>${esc(x.desig)}</td><td>${/independent/i.test(x.cat) ? `<span class="recon bad">${esc(x.cat)}</span>` : esc(x.cat)}</td><td>${esc(x.apptd)}</td><td>${esc(x.sign || "")}</td></tr>`).join("")}</tbody></table>
+        ${m ? `<p class="small">MCA: status ${esc(m.status || "")}; ${m.type === "llp" ? `${esc(m.partners)} partners, ${esc(m.dps)} designated; contribution ₹${lakh(m.contribution)} lakh` : `authorised ₹${lakh(m.auth)} lakh, paid-up ₹${lakh(m.paid)} lakh; last AGM ${esc(m.agm || "–")}; balance sheet ${esc(m.bs || "–")}; ACTIVE form: ${esc(m.active && m.active !== "-" ? m.active : "not applicable / not shown")}`}.
+          Open charges: ${open.length ? open.map(c => `${esc(c.holder)} ₹${lakh(c.amount)} lakh (${esc(c.created)})${c.assetHolder ? ` – asset holder ${esc(c.assetHolder)}` : ""}`).join("; ") : "none"}.</p>` : ""}</div>`; })()}${docEditor(e)}<dl class="dgrid" style="display:none">
+    </dl></td></tr>` : "")).join("") || `<tr><td colspan="${REG.length}" class="small">No entity matches these filters.</td></tr>`;
+  const t = $("#tReg"); t.innerHTML = head + `<tbody>${body}</tbody>`; t._rows = rows;
+  t.querySelectorAll("th").forEach(th => th.onclick = () => { sortReg = {k:th.dataset.k, d: sortReg.k === th.dataset.k ? -sortReg.d : 1}; renderRegister(); });
+  t.querySelectorAll("tr.main").forEach(tr => tr.onclick = () => { openRow = openRow === tr.dataset.sr ? null : tr.dataset.sr; renderRegister(); });
+  bindDocEditors(t);
+}
+
+function renderCapital(){
+  const f = $("#fCap").value;
+  const rows = E.filter(e => e.con === "Private company").filter(e => !f || (f === "miss" ? e.paid == null : e.recon === "bad"));
+  const rt = {ok:"Reconciled", bad:"Difference", na:"Capital not captured", noshare:"Not in shareholding list"};
+  const sum = k => rows.reduce((a, e) => a + (e[k] || 0), 0);
+  const t = $("#tCap");
+  t.innerHTML = `<thead><tr><th>Company</th><th class="r">Authorised</th><th class="r">Paid-up</th><th class="r">Paid-up / Authorised</th><th class="r">Headroom</th><th class="r">Shares (31-03-2026)</th><th class="r">Shares × face value (+ preference)</th><th>Reconciliation</th></tr></thead><tbody>` +
+    rows.map(e => `<tr><td class="name">${esc(e.name)}</td><td class="r">${lakh(e.auth)}</td><td class="r">${lakh(e.paid)}</td>
+      <td class="r">${e.auth && e.paid != null ? (e.paid / e.auth * 100).toFixed(1) + "%" : ""}</td>
+      <td class="r">${e.auth != null && e.paid != null ? lakh(e.auth - e.paid) : ""}</td>
+      <td class="r">${e.shares == null ? "" : INR.format(e.shares)}</td><td class="r">${e.shares == null ? "" : lakh(e.shares * (e.fv || 10) + (e.pref || 0))}</td>
+      <td><span class="recon ${e.recon === "ok" ? "ok" : e.recon === "bad" ? "bad" : "na"}">${rt[e.recon]}</span></td></tr>`).join("") +
+    `</tbody><tfoot><tr><td>Total (${rows.length} companies)</td><td class="r">${lakh(sum("auth"))}</td><td class="r">${lakh(sum("paid"))}</td><td></td><td></td><td></td><td></td><td></td></tr></tfoot>`;
+  t._rows = rows; t._rt = rt;
+}
+
+function renderObs(){
+  $("#checks").innerHTML = Object.entries(CHECK_LABEL).map(([k, l]) => { const fail = E.filter(e => !e.checks[k]).length;
+    return `<li><span>${l}</span><b class="${fail ? "bad" : "ok"}">${fail ? `${fail} failed` : `${E.length} passed`}</b></li>`; }).join("");
+  const f = $("#fSev").value, rows = OBS.filter(o => !f || o.sev === f);
+  const t = $("#tObs");
+  t.innerHTML = `<thead><tr><th>Severity</th><th>Entity</th><th>Observation</th><th>Recommended action</th></tr></thead><tbody>` +
+    (rows.map(o => `<tr><td><span class="sev ${o.sev}">${o.sev}</span></td><td class="name">${esc(o.entity)}</td><td>${esc(o.obs)}</td><td>${esc(o.action)}</td></tr>`).join("") || `<tr><td colspan="4" class="small">No observations at this severity.</td></tr>`) + `</tbody>`;
+  t._rows = rows;
+}
+function renderAll(){ finRowsCache = null; renderLedger(); renderOverview(); renderRegister(); renderCapital(); renderLoans(); renderFinLedger(); renderMix(); renderFin(); renderLenderAgg(); OBS = observations(E).concat(finObservations(), mcaObservations()).sort((a, b) => ({High:0,Medium:1,Low:2})[a.sev] - ({High:0,Medium:1,Low:2})[b.sev]); renderLedger(); renderObs(); renderXh(); renderDirReg(); }
+
+/* ================= Group financials ================= */
+const lsGet = (k, d) => { try { const v = localStorage.getItem("cmdash2:" + k); return v ? JSON.parse(v) : d; } catch { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem("cmdash2:" + k, JSON.stringify(v)); } catch {} };
+const FIN = (SEED.fin || []).map(f => ({...f, key: coKey(f.name)}));
+const FINMAP = Object.fromEntries(FIN.map(f => [f.key, f]));
+const PAN2ENT = () => Object.fromEntries(E.filter(e => e.pan).map(e => [e.pan, e]));
+const pname = n => norm(n);
+const NAME2CODE = {ajaykumarshroff:"AKS", archanashroff:"ARS", yashaswishroff:"YSS", yashasvishroff:"YSS", aakritishroff:"AAK"};
+const CODE2NAME = {AKS:"Ajay Kumar Shroff", ARS:"Archana Shroff", YSS:"Yashaswi Shroff", AAK:"Aakriti Shroff"};
+function lenderType(l){ if (l.type === "dir" || l.type === "bank") return l.type; if (l.type === "grp" || PAN2ENT()[l.pan]) return "grp"; return "bc"; }
+const LTYPE = {dir:"Director / relative", grp:"Group entity", bc:"Other body corporate / others", bank:"Bank / NBFC (secured)"};
+const KIND = {company:"Company", llp:"LLP", firm:"Firm"};
+let finRowsCache = null;
+function finRows(){
+  if (finRowsCache) return finRowsCache;
+  return finRowsCache = FIN.map(f => {
+    const ent = E.find(e => coKey(e.name) === f.key);
+    const split = {dir:0, grp:0, bc:0, bank:0};
+    f.lenders.forEach(l => split[lenderType(l)] += l.amt);
+    const P = PAN2ENT(), lgGrp = (f.loans || []).filter(l => P[l.pan] || /llp/i.test(l.name) && P[l.pan]).reduce((a, l) => a + l.amt, 0);
+    const nw = f.sc[0] + f.rs[0], nwPy = f.sc[1] + f.rs[1];
+    return {f, name: ent ? ent.name : f.name, kind: f.kind || "company", nw, nwPy, borr:f.borr[0], borrPy:f.borr[1], split,
+      lg: (f.lg || [0])[0], lgGrp, assets:f.total[0], prop:(f.invent[0] || 0) + (f.inv[0] || 0),
+      fin:f.fin[0], pat:f.pat[0], rev:(f.rev[0] || 0) + (f.oi ? f.oi[0] || 0 : 0), de: nw > 0 ? f.borr[0] / nw : null, erosion: f.kind === "company" && f.sc[0] ? -Math.min(0, f.rs[0]) / f.sc[0] : 0};
+  });
+}
+const L2 = v => v == null ? "" : INR2.format(v);
+const dash = v => v ? L2(v) : "–";
+function renderFinLedger(){
+  const R = finRows(), sum = k => R.reduce((a, r) => a + r[k], 0), X = existingLoans();
+  const igl = X.reduce((a, x) => a + x.amt, 0), lenders = [...new Set(X.map(x => x.lender.replace(/\b(Private|Pvt\.?|Limited|Ltd\.?)\b\.?/gi, "").trim()))];
+  const neg = R.filter(r => r.nw < 0);
+  $("#finLedger").innerHTML = [
+    ["Financial statements loaded", `${R.length} of ${E.length}`, `${R.filter(r => r.kind === "company").length} companies, ${R.filter(r => r.kind !== "company").length} LLP / firms`],
+    ["Total borrowings", `₹${L2(sum("borr"))} lakh`, `Previous year ₹${L2(sum("borrPy"))} lakh`],
+    ["Inter-group loans", `₹${L2(igl)} lakh`, `Lenders: ${lenders.join(", ")}`, igl ? "bad" : ""],
+    ["Combined net worth", `₹${L2(sum("nw"))} lakh`, `${neg.length} with negative net worth`],
+    ["Total income", `₹${L2(sum("rev"))} lakh`, `Net profit ₹${L2(sum("pat"))} lakh`],
+    ["Finance cost", `₹${L2(sum("fin"))} lakh`, "Mostly capitalised into inventory / WIP"]
+  ].map(([k, v, s, c]) => `<div><dt>${k}</dt><dd class="${c || ""}">${v}<small>${esc(s)}</small></dd></div>`).join("");
+}
+const MIXCOL = {dir:"var(--c-co)", grp:"var(--seal)", bc:"var(--c-firm)", bank:"var(--ochre)"};
+function renderMix(keys){
+  const R = finRows().filter(r => r.borr > 0 && (!keys || keys.has(r.f.key))).sort((a, b) => b.borr - a.borr), max = Math.max(...R.map(r => r.borr));
+  $("#mixBars").innerHTML = R.map(r => `<span>${esc(r.name)}</span><span class="bar" style="width:${Math.max(2, r.borr / max * 100)}%">${["dir","grp","bc","bank"].filter(k => r.split[k] > 0).map(k => `<span title="${LTYPE[k]}: ₹${L2(r.split[k])} lakh" style="width:${r.split[k] / r.borr * 100}%;background:${MIXCOL[k]}"></span>`).join("")}</span><span class="t">${L2(r.borr)}</span>`).join("") +
+    `<span class="small" style="grid-column:1/-1">${keys ? `Chart follows the filters on the summary table below (${R.length} entities with borrowings). ` : ""}${finRows().filter(r => !r.borr && (!keys || keys.has(r.f.key))).map(r => r.name).join(", ")}${finRows().some(r => !r.borr && (!keys || keys.has(r.f.key))) ? " have no borrowings." : ""}</span>`;
+}
+let finOpen = null, finSort = {k:"borr", d:-1}, finKind = "";
+const FIN_COLS = [
+  {k:"name", h:"Entity", f:r => `${esc(r.name)}${r.kind !== "company" ? ` <span class="tag">${KIND[r.kind]}</span>` : ""}`, s:r => r.name},
+  {k:"nw", h:"Net worth / partners’ funds", r:1, f:r => `<span class="${r.nw < 0 ? "recon bad" : ""}">${L2(r.nw)}</span>`, s:r => r.nw},
+  {k:"erosion", h:"Capital eroded", r:1, f:r => r.erosion ? (r.erosion * 100).toFixed(0) + "%" : "–", s:r => r.erosion},
+  {k:"borr", h:"Borrowings", r:1, f:r => dash(r.borr), s:r => r.borr},
+  {k:"dir", h:"From directors", r:1, f:r => dash(r.split.dir), s:r => r.split.dir},
+  {k:"grp", h:"From group", r:1, f:r => r.split.grp ? `<b style="color:var(--seal)">${L2(r.split.grp)}</b>` : "–", s:r => r.split.grp},
+  {k:"bc", h:"Other lenders", r:1, f:r => dash(r.split.bc + r.split.bank), s:r => r.split.bc + r.split.bank},
+  {k:"lg", h:"Loans given", r:1, f:r => r.lg ? (r.lgGrp ? `<b style="color:var(--seal)">${L2(r.lg)}</b>` : L2(r.lg)) : "–", s:r => r.lg},
+  {k:"prop", h:"Inventory / property", r:1, f:r => dash(r.prop), s:r => r.prop},
+  {k:"rev", h:"Total income", r:1, f:r => dash(r.rev), s:r => r.rev},
+  {k:"fin", h:"Finance cost", r:1, f:r => dash(r.fin), s:r => r.fin},
+  {k:"pat", h:"Profit / (loss)", r:1, f:r => `<span class="${r.pat < 0 ? "" : "recon ok"}">${L2(r.pat)}</span>`, s:r => r.pat},
+  {k:"de", h:"Debt / equity (×)", r:1, f:r => !r.borr ? "–" : r.de == null ? `<span class="recon bad">n.m.</span>` : r.de.toFixed(1), s:r => r.de ?? 1e9}
+];
+function renderFin(){
+  const R = finRows().filter(r => !finKind || (finKind === "grp" ? r.split.grp || r.lgGrp : r.kind === finKind)).slice(), col = FIN_COLS.find(c => c.k === finSort.k);
+  R.sort((a, b) => { const x = col.s(a), y = col.s(b); return (x > y ? 1 : x < y ? -1 : 0) * finSort.d; });
+  const tot = k => R.reduce((a, r) => a + (["dir","grp"].includes(k) ? r.split[k] : k === "bc" ? r.split.bc + r.split.bank : r[k]), 0);
+  const conflicts = panConflicts(), P = PAN2ENT();
+  const t = $("#tFin");
+  t.innerHTML = `<thead><tr>${FIN_COLS.map(c => `<th data-k="${c.k}" class="${c.r ? "r" : ""}">${c.h}${finSort.k === c.k ? (finSort.d > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr></thead><tbody>` +
+    R.map(r => `<tr class="main" data-k="${r.f.key}">${FIN_COLS.map(c => `<td class="${c.r ? "r" : ""} ${c.k === "name" ? "name" : ""}">${c.f(r)}</td>`).join("")}</tr>` +
+      (finOpen === r.f.key ? `<tr class="detail"><td colspan="${FIN_COLS.length}"><div class="grid2" style="gap:14px">
+        <div><b>Borrowings</b>${r.f.lenders.length ? `<table style="width:100%"><thead><tr><th>Lender</th><th>PAN</th><th>Type</th><th class="r">₹ lakh</th></tr></thead><tbody>${
+          r.f.lenders.slice().sort((a, b) => b.amt - a.amt).map(l => `<tr><td>${esc(l.name)}</td><td>${l.pan ? `<span class="stamp ${conflicts.has(l.pan) ? "bad" : "ok"}">${esc(l.pan)}</span>` : ""}</td><td>${LTYPE[lenderType(l)]}</td><td class="r">${L2(l.amt)}</td></tr>`).join("")}</tbody></table>` : `<p class="small">None.</p>`}</div>
+        <div><b>Loans given</b>${(r.f.loans || []).length ? `<table style="width:100%"><thead><tr><th>Borrower</th><th>PAN</th><th>Group?</th><th class="r">₹ lakh</th></tr></thead><tbody>${
+          r.f.loans.slice().sort((a, b) => b.amt - a.amt).map(l => `<tr><td>${esc(l.name)}</td><td>${l.pan ? `<span class="stamp ok">${esc(l.pan)}</span>` : ""}</td><td>${P[l.pan] ? `<span class="recon bad">Group</span>` : "No"}</td><td class="r">${L2(l.amt)}</td></tr>`).join("")}</tbody></table>` : `<p class="small">None.</p>`}
+          ${r.f.rate ? `<p class="small">Interest rate: ${esc(r.f.rate)}.</p>` : ""}${r.f.invNote ? `<p class="small">Non-current investment: ${esc(r.f.invNote)}, ₹${L2(r.f.inv[0])} lakh.</p>` : ""}${r.f.deposit ? `<p class="small">${esc(r.f.depositNote || "Security deposit given to an LLP under a JDA")}: ₹${L2(r.f.deposit)} lakh (included in other assets).</p>` : ""}${r.f.partners ? `<p class="small">Partners (capital share, used as profit share): ${Object.entries(r.f.partners).map(([n, p]) => `${esc(n)} ${p}%`).join(", ")}.</p>` : ""}</div>
+      </div><p class="small">Source: ${esc(r.f.file)} (${esc(r.f.srcUnit || "")}, converted to ₹ lakh). Signatories: ${esc((r.f.directors || []).join(", "))}. Capital ₹${L2(r.f.sc[0])} lakh; reserves / current account ₹${L2(r.f.rs[0])} lakh${r.f.sp ? ` (incl. securities premium ₹${L2(r.f.sp)} lakh)` : ""}; total assets ₹${L2(r.assets)} lakh.</p></td></tr>` : "")).join("") +
+    `</tbody><tfoot><tr><td>Total (${R.length})</td><td class="r">${L2(tot("nw"))}</td><td></td><td class="r">${L2(tot("borr"))}</td><td class="r">${L2(tot("dir"))}</td><td class="r">${L2(tot("grp"))}</td><td class="r">${L2(tot("bc"))}</td><td class="r">${L2(tot("lg"))}</td><td class="r">${L2(tot("prop"))}</td><td class="r">${L2(tot("rev"))}</td><td class="r">${L2(tot("fin"))}</td><td class="r">${L2(tot("pat"))}</td><td></td></tr></tfoot>`;
+  t._rows = R;
+  t.querySelectorAll("th").forEach(th => th.onclick = () => { finSort = {k:th.dataset.k, d: finSort.k === th.dataset.k ? -finSort.d : -1}; renderFin(); });
+  t.querySelectorAll("tr.main").forEach(tr => tr.onclick = () => { finOpen = finOpen === tr.dataset.k ? null : tr.dataset.k; renderFin(); });
+}
+function panConflicts(){
+  const byPan = {}, byName = {}, nk = n => norm(n).replace(/(private|pvt|limited|ltd|p)$/g, "").slice(0, 12);
+  FIN.forEach(f => f.lenders.filter(l => l.pan).forEach(l => { (byPan[l.pan] ||= new Set()).add(nk(l.name)); (byName[nk(l.name)] ||= new Set()).add(l.pan); }));
+  const bad = new Set();
+  for (const [p, s] of Object.entries(byPan)) if (s.size > 1) bad.add(p);
+  for (const s of Object.values(byName)) if (s.size > 1) s.forEach(p => bad.add(p));
+  return bad;
+}
+function lenderAgg(){
+  const m = {};
+  FIN.forEach(f => f.lenders.forEach(l => {
+    const k = l.pan && PAN2ENT()[l.pan] ? l.pan : norm(l.name).slice(0, 14);
+    const a = m[k] ||= {name: PAN2ENT()[l.pan] ? PAN2ENT()[l.pan].name : l.name, pans:new Set(), type:lenderType(l), cos:[], amt:0};
+    if (l.pan) a.pans.add(l.pan); a.amt += l.amt; a.cos.push(finRows().find(r => r.f.key === f.key).name);
+  }));
+  return Object.values(m).sort((a, b) => b.amt - a.amt);
+}
+function renderLenderAgg(){
+  const A = lenderAgg(), total = A.reduce((s, a) => s + a.amt, 0), bad = panConflicts();
+  const t = $("#tLenders");
+  t.innerHTML = `<thead><tr><th>Lender</th><th>Type</th><th>PAN(s) as recorded</th><th class="r">Entities</th><th class="r">₹ lakh</th><th class="r">Share</th><th>Borrowing entities</th></tr></thead><tbody>` +
+    A.map(a => `<tr><td class="name">${esc(a.name)}</td><td>${LTYPE[a.type]}</td><td>${[...a.pans].map(p => `<span class="stamp ${bad.has(p) ? "bad" : "ok"}">${p}</span>`).join(" ")}</td><td class="r">${a.cos.length}</td><td class="r">${L2(a.amt)}</td><td class="r">${(a.amt / total * 100).toFixed(1)}%</td><td class="small">${esc(a.cos.join(", "))}</td></tr>`).join("") + `</tbody>`;
+  t._rows = A;
+}
+
+/* LLP borrower tests: Sec 185(2) via designated partners' share, deemed dividend via partners' income share */
+function llpTest(L, bname, bEnt, B, asAt){
+  if (L && B) return {route: route(L, B, asAt), routeNow: route(L, B), dd: ddLinks(L, B).length > 0};
+  const bf = FINMAP[coKey(bname)];
+  if (!L || !bEnt || bEnt.con === "Private company" || !bf || !bf.partners) return {route: "?", dd: null};
+  const share = n => bf.partners[Object.keys(bf.partners).find(k => pname(k) === pname(n))] || 0;
+  const ldirs = dirNamesByKey(L.key).length ? dirNamesByKey(L.key) : Object.keys(CODE2NAME).filter(k => HC[k].dir === "Y").map(k => CODE2NAME[k]);
+  const dirShare = ldirs.reduce((a, d) => a + share(d), 0);
+  const ddHits = CODES.filter(k => L.pct[k] >= 0.1 && CODE2NAME[k] && share(CODE2NAME[k]) >= 20);
+  return {route: L.s185 === "Available" ? "A" : L.s185 === "Provisional" ? "P" : dirShare >= 25 ? "B" : "C", dd: ddHits.length > 0, llpNote: `Lender’s directors hold ${dirShare}% of the LLP (Sec 185(2)(b) test at 25%)${ddHits.length ? `; ${ddHits.map(k => `${CODE2NAME[k]} holds ${(L.pct[k] * 100).toFixed(1)}% of the lender and ${share(CODE2NAME[k])}% of the LLP`).join("; ")}` : ""}.`};
+}
+/* Existing inter-group loans: merged from borrower and lender financial statements */
+let CMP = lsGet("cmp", {});
+function existingLoans(){
+  const P = PAN2ENT(), pairs = {};
+  const put = (lenderEnt, borrowerEnt, amt, side) => {
+    const id = coKey(lenderEnt.name) + ">" + coKey(borrowerEnt.name);
+    const p = pairs[id] ||= {id, lender:lenderEnt.name, borrower:borrowerEnt.name, bSide:null, lSide:null};
+    p[side] = (p[side] || 0) + amt;
+  };
+  for (const f of FIN) {
+    const self = E.find(e => coKey(e.name) === f.key); if (!self) continue;
+    for (const l of f.lenders) if (l.pan && P[l.pan] && l.type !== "dir") put(P[l.pan], self, l.amt, "bSide");
+    for (const l of f.loans || []) if (l.pan && P[l.pan]) put(self, P[l.pan], l.amt, "lSide");
+  }
+  return Object.values(pairs).map(p => {
+    const L = LG.find(c => c.key === coKey(p.lender)), B = LG.find(c => c.key === coKey(p.borrower));
+    const bEnt = E.find(e => coKey(e.name) === coKey(p.borrower));
+    return {...p, amt: p.bSide ?? p.lSide, diff: p.bSide != null && p.lSide != null ? p.bSide - p.lSide : null, L, B,
+      ...llpTest(L, p.borrower, bEnt, B, "bs")};
+  }).sort((a, b) => b.amt - a.amt);
+}
+const CMP_FIELDS = [["sr","Special Resolution u/s 185(2)"],["sr186","Special Resolution u/s 186(3)"],["mgt","MGT-14 filed"],["br","Board resolution u/s 186"],["rate","Interest ≥ G-sec yield"],["mbp","MBP-2 entry"]];
+function reqFields(r){
+  const over = r.L && r.L.headroom != null && r.L.headroom < 0;
+  return CMP_FIELDS.filter(([k]) => k === "sr" ? r.route === "B" : k === "sr186" ? over : k === "mgt" ? r.route === "B" || over : true);
+}
+function renderExisting(){
+  const X = existingLoans(), t = $("#tExist");
+  if (!X.length) { t.innerHTML = `<tbody><tr><td class="small">No inter-group loans found in the loaded financial statements.</td></tr></tbody>`; return; }
+  const rt = r => (ROUTE_TXT[r.route] || "Shareholding / partner data not available") + (r.llpNote ? " – " + r.llpNote : "") + (r.routeNow && r.routeNow !== r.route ? ` – route for any new loan or increase under the current board: ${r.routeNow}` : "");
+  t.innerHTML = `<thead><tr><th>Lender</th><th>Borrower</th><th class="r">₹ lakh</th><th>Confirmed by</th><th>Route</th><th>Deemed dividend</th>${CMP_FIELDS.map(([, h]) => `<th>${h}</th>`).join("")}<th>Status</th></tr></thead><tbody>` +
+    X.map(r => { const c = CMP[r.id] || {}, req = reqFields(r), done = req.every(([k]) => c[k] === "Y"), anyN = req.some(([k]) => c[k] === "N");
+      const conf = r.bSide != null && r.lSide != null ? (Math.abs(r.diff) < 0.01 ? `<span class="recon ok">Both FS agree</span>` : `<span class="recon bad">Lender FS ₹${L2(r.lSide)} vs borrower FS ₹${L2(r.bSide)} lakh</span>`) : r.bSide != null ? "Borrower FS only" : "Lender FS only";
+      return `<tr><td class="name">${esc(r.lender)}</td><td>${esc(r.borrower)}</td><td class="r">${L2(r.amt)}</td><td class="small">${conf}</td>
+      <td><span class="stamp ${r.route === "B" ? "bad" : r.route === "C" || r.route === "A" ? "ok" : "na"}" title="${esc(rt(r))}">${r.route}</span>${r.routeNow && r.routeNow !== r.route ? `<div class="sub" style="color:var(--seal)">Now ${r.routeNow} (board changed)</div>` : ""}</td>
+      <td>${r.dd ? `<span class="recon bad">Exposure</span>` : r.dd === false ? "None" : "To assess"}</td>
+      ${CMP_FIELDS.map(([k]) => req.some(([q]) => q === k) ? `<td><select class="cmp" data-id="${r.id}" data-f="${k}"><option value="">Pending</option><option ${c[k] === "Y" ? "selected" : ""} value="Y">Verified</option><option ${c[k] === "N" ? "selected" : ""} value="N">Not done</option></select></td>` : `<td class="small">Not required</td>`).join("")}
+      <td><span class="recon ${done ? "ok" : anyN ? "bad" : "na"}">${done ? "Compliant" : anyN ? "Non-compliant" : "To verify"}</span></td></tr>`; }).join("") +
+    `</tbody><tfoot><tr><td colspan="2">Total</td><td class="r">${L2(X.reduce((a, r) => a + r.amt, 0))}</td><td colspan="${CMP_FIELDS.length + 4}"></td></tr></tfoot>`;
+  t._rows = X;
+  t.querySelectorAll("select.cmp").forEach(s => s.onchange = () => { (CMP[s.dataset.id] ||= {})[s.dataset.f] = s.value; lsSet("cmp", CMP); renderExisting(); });
+}
+
+/* Observations drawn from the financial statements */
+function finObservations(){
+  const O = [], add = (sev, entity, obs, action) => O.push({sev, entity, obs, action});
+  const R = finRows(), X = existingLoans();
+  const byL = {}; X.forEach(x => (byL[x.lender] ||= []).push(x));
+  for (const [ln, xs] of Object.entries(byL)) {
+    const L = xs[0].L, tot = xs.reduce((a, x) => a + x.amt, 0), fs = L && FINMAP[L.key];
+    const parts = [`Inter-group loans of ₹${L2(tot)} lakh to ${list(xs.map(x => x.borrower))}.`];
+    const routes = new Set(xs.map(x => x.route));
+    if (routes.has("B")) parts.push("The lender cannot use the Sec 185 exemption and its directors are interested in the borrowers, so each loan needs a Special Resolution u/s 185(2).");
+    if (routes.has("C") && fs) parts.push(`Sec 185(2) is not attracted on the lender’s directors per its FS (${fs.directors.join(", ")}), who are not directors or members of the borrowers.`);
+    if (routes.has("P")) parts.push("The lender may use the Sec 185 exemption, subject to its borrowing and default position.");
+    if (routes.has("LLP")) parts.push("Loans to an LLP need a Sec 185(2)(b)/(c) assessment of the directors’ interest in the LLP.");
+    if (L && L.headroom != null && L.headroom < 0) parts.push(`Sec 186 exposure ₹${L2(L.in.exp)} lakh exceeds the limit of ₹${L2(L.limit / 1e5)} lakh by ₹${L2(-L.headroom / 1e5)} lakh, so a Special Resolution u/s 186(3) is required.`);
+    else if (L && L.limit != null) parts.push(`Within the Sec 186 limit of ₹${L2(L.limit / 1e5)} lakh.`);
+    else parts.push("Lender’s financial statements not loaded, so the Sec 186 limit cannot be tested.");
+    if (xs.some(x => x.dd)) parts.push(L && L.in.ap != null ? (L.in.ap > 0 ? `Deemed dividend exposure up to the lender’s accumulated profits of ₹${L2(L.in.ap)} lakh.` : "Lender has no accumulated profits, so no deemed dividend arises at present.") : "Deemed dividend exposure exists; size it once the lender’s accumulated profits are known.");
+    if (xs.some(x => x.diff != null && Math.abs(x.diff) >= 0.01)) parts.push("Lender and borrower balances do not agree for some pairs.");
+    const chg = xs.filter(x => x.routeNow && x.routeNow !== x.route);
+    if (chg.length) { const bc = boardChange(E.find(e => e.name === ln) || {}); parts.push(`The board changed on ${bc ? bc.date : "a later date"}${bc ? ` (${bc.added.join(", ")} appointed)` : ""}: the loans above were given under the earlier board, but any new loan, increase or renewal to these borrowers now falls under route ${chg[0].routeNow}${chg[0].routeNow === "B" ? " – Special Resolution u/s 185(2) before disbursement" : ""}.`); }
+    add(routes.has("B") || xs.some(x => x.routeNow === "B") || (L && L.headroom != null && L.headroom < 0) || xs.some(x => x.dd && (!L || L.in.ap == null || L.in.ap > 0)) ? "High" : "Medium", ln, parts.join(" "),
+      "Verify Special Resolutions, MGT-14, Board resolutions, interest rate and MBP-2 for each loan in the Inter-group loans tab; ratify or regularise any shortfall before the next AGM.");
+  }
+  for (const c of LG.filter(c => FINMAP[c.key] && c.headroom != null && c.headroom < 0 && !byL[c.name]))
+    add("High", c.name, `Sec 186 exposure ₹${L2(c.in.exp)} lakh (loans, guarantees and investments) exceeds the limit of ₹${L2(c.limit / 1e5)} lakh by ₹${L2(-c.headroom / 1e5)} lakh.`, "Confirm a Special Resolution u/s 186(3) was passed before the exposure crossed the limit, and that MBP-2 is complete.");
+  const neg = R.filter(r => r.nw < 0);
+  if (neg.length) add("High", `${neg.length} entities`, `Negative net worth: ${neg.map(r => `${r.name} (₹${L2(r.nw)} lakh)`).join(", ")}.`, "Assess going concern disclosure and obtain continued financial support from directors / lenders.");
+  const gs = R.filter(r => /^(mekhala|mitesh|naman|nidan|nihar|niket|nikhar|pallav|pravesh|shronit|srinit|sweethome|tejendra|tuhin|vicharan|wave)/.test(r.f.key));
+  const cap = gs.filter(r => r.fin > 0), invOnly = gs.filter(r => !r.fin && r.f.inv[0]);
+  if (gs.length) add("Medium", `${gs.length} Gurusady companies`, `Finance cost of ₹${L2(cap.reduce((a, r) => a + r.fin, 0))} lakh was added to inventory in ${cap.length} companies; in ${invOnly.length} (${invOnly.map(r => r.name).join(", ")}) “investment in property” rose by ₹${L2(invOnly.reduce((a, r) => a + r.f.inv[0] - r.f.inv[1], 0))} lakh with no finance cost in the P&L. Combined carrying value ₹${L2(gs.reduce((a, r) => a + r.prop, 0))} lakh for 1/34th shares of the Gurusady property.`,
+    "Confirm active development is under way (AS 16 stops capitalisation during extended interruptions) and test carrying value against net realisable value (AS 2). Interest cannot be capitalised into a non-current investment.");
+  const bad = panConflicts();
+  if (bad.size) add("Medium", "Group lenders", `Lender PANs inconsistent across borrowing schedules: ${[...bad].join(", ")}.`, "Confirm each lender’s PAN from the loan agreement and PAN card, and correct interest TDS returns to avoid credit mismatches.");
+  for (const f of FIN.filter(f => f.fsHold)) {
+    const h = SEED.holdings.find(x => coKey(x.name) === f.key); if (!h) continue;
+    const diffs = Object.entries(f.fsHold).map(([n, s]) => { const code = NAME2CODE[pname(n)] || (PAN2ENT() && Object.entries(HC).find(([, v]) => v.link && coKey(v.link) === coKey(n)) || [])[0]; return {n, s, list: code ? h.h[code] || 0 : null}; }).filter(d => d.list !== d.s);
+    if (diffs.length) add("High", finRows().find(r => r.f.key === f.key).name, `Shareholding in the financial statements does not agree with the shareholding list as on 31-03-2026: ${diffs.map(d => `${d.n} ${INR.format(d.s)} shares per FS vs ${d.list == null ? "not in list" : INR.format(d.list) + " per list"}`).join("; ")}.`,
+      "Reconcile the register of members, SH-4 transfers and MGT-7. Update the shareholding list – it drives the Sec 185 exemption and deemed dividend tests.");
+  }
+  const dirAmt = {}; FIN.forEach(f => f.lenders.filter(l => l.type === "dir").forEach(l => { const n = /^loans from director/i.test(l.name) ? "Director(s) of AN Industries" : l.name; dirAmt[n] = (dirAmt[n] || 0) + l.amt; }));
+  add("Low", "Director / relative loans", `Loans from ${Object.entries(dirAmt).sort((a, b) => b[1] - a[1]).map(([n, a]) => `${n} ₹${L2(a)} lakh`).join(", ")}.`, "Keep each lender’s declaration that the funds are not borrowed (Rule 2(1)(c)(viii), Deposit Rules), disclose in the Board’s report and report in DPT-3.");
+  const dep = FIN.filter(f => f.deposit);
+  for (const f of dep) add("Low", finRows().find(r => r.f.key === f.key).name, `${f.depositNote || "Security deposit given to an LLP under a joint development agreement"}: ₹${L2(f.deposit)} lakh.`, "Confirm it is a business deposit under the JDA and not a loan; if it is in substance a loan, test it under Sec 185 / 186 and deemed dividend.");
+  const sarda = FIN.filter(f => f.directors && f.directors.some(d => /sarda/i.test(d)) && !boardChange(E.find(e => coKey(e.name) === f.key) || {}));
+  if (sarda.length) add("Medium", `${sarda.length} companies`, `${list(sarda.map(f => finRows().find(r => r.f.key === f.key).name))} are run by directors Shanta Sarda and Amit Kumar Sarda, from 21A Shakespeare Sarani – not the 68/2 Harish Mukherjee Road address in the Company Master. Their shareholders include other companies (e.g. Jupiter Finvest, Piyashi Builders) and none appear in the shareholding list.`,
+    "Confirm whether these are group entities or third-party co-owners of the Gurusady property; correct the Company Master (address, software, group status) accordingly and keep them out of group-loan approvals if they are not related.");
+  for (const f of FIN.filter(f => f.capNote || f.landNote)) add("Medium", finRows().find(r => r.f.key === f.key).name, [f.capNote, f.landNote].filter(Boolean).join(" "), "Correct the presentation before filing AOC-4 and support the derecognition of land development cost with board approval and agreements.");
+  for (const f of FIN.filter(f => f.llpCurrent)) add("Low", finRows().find(r => r.f.key === f.key).name, `Current account of ₹${L2(f.llpCurrent)} lakh in Alcove Developers LLP, earning interest at 12%. It is not treated as a Sec 186 investment here; if it were, Sec 186 exposure would rise to ₹${L2((f.exp186 || 0) + f.llpCurrent)} lakh against the limit.`, "Take a view on whether the partner’s current-account balance is a loan or investment for Sec 186, and document it.");
+  const lostEx = LG.filter(c => FINMAP[c.key] && c.s185 === "Not available" && c.bcPct === 0);
+  if (lostEx.length) add("Low", `${lostEx.length} companies`, `Sec 185 exemption lost because borrowings from banks / bodies corporate exceed the lower of 2× paid-up capital or ₹50 crore: ${list(lostEx.map(c => c.name))}.`, "Any loan by these companies to a group company where their directors are interested needs a Special Resolution u/s 185(2).");
+  return O;
+}
+
+/* ================= Directors (MCA master data, else FS signatories) ================= */
+let MCA = Object.assign({}, SEED.mca || {}, lsGetMca());
+function lsGetMca(){ try { return JSON.parse(localStorage.getItem("cmdash2:mca") || "{}"); } catch { return {}; } }
+function mcaFor(e){ return MCA[e.cin] || Object.values(MCA).find(m => coKey(m.name) === coKey(e.name)) || null; }
+function dirsFor(e){
+  const m = mcaFor(e);
+  if (m && m.directors.length) return {src:"MCA", list:m.directors.filter(d => !d.ceased)};
+  const f = (SEED.fin || []).find(f => coKey(f.name) === coKey(e.name));
+  if (f && f.directors && f.directors.length) return {src:"FS", list:f.directors.map(n => ({name:n, din:"", desig: f.kind === "company" ? "Signatory (FS)" : "Partner / signatory (FS)", cat:"", apptd:""}))};
+  return {src:"", list:[]};
+}
+const dmy = s => { const m = String(s || "").match(/(\d{2})\/(\d{2})\/(\d{4})/); return m ? new Date(+m[3], +m[2] - 1, +m[1]) : null; };
+const BS_DATE = new Date(2026, 2, 31);
+function dirsAsAtBS(e){
+  const m = mcaFor(e);
+  if (m) { const l = m.directors.filter(d => { const a = dmy(d.apptd), c = dmy(d.ceased); return (!a || a <= BS_DATE) && (!c || c > BS_DATE); }); if (l.length) return l.map(d => d.name); }
+  const f = (SEED.fin || []).find(f => coKey(f.name) === coKey(e.name));
+  return f && f.directors ? f.directors.slice() : dirsFor(e).list.map(d => d.name);
+}
+function boardChange(e){
+  const m = mcaFor(e); if (!m || !m.directors.length) return null;
+  const cur = m.directors.filter(d => !d.ceased), after = cur.filter(d => { const a = dmy(d.apptd); return a && a > BS_DATE; });
+  if (!after.length) return null;
+  const prev = dirsAsAtBS(e).filter(n => !cur.some(d => pname(d.name) === pname(n)));
+  return {date: after.map(d => d.apptd).sort()[0], added: after.map(d => d.name), prev, allNew: after.length === cur.length};
+}
+const dirNamesByKey = (key, asAt) => { const e = E.find(x => coKey(x.name) === key); return !e ? [] : asAt === "bs" ? dirsAsAtBS(e) : dirsFor(e).list.map(d => d.name); };
+function parseMcaWorkbook(wb, file){
+  const tc = n => String(n || "").toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/\s+/g, " ").replace(/\bLlp\b/g, "LLP").trim();
+  const aoa = s => wb.Sheets[s] ? XLSX.utils.sheet_to_json(wb.Sheets[s], {header:1, raw:false, defval:""}) : [];
+  const kv = {}; aoa("MasterData").forEach(r => { if (r[0]) kv[String(r[0]).trim()] = r[1]; });
+  if (!kv.CIN && !kv.LLPIN) throw new Error("No MasterData sheet with CIN / LLPIN");
+  const num = v => { const n = parseFloat(String(v).replace(/,/g, "")); return isNaN(n) ? null : n; };
+  const d = {file, type: kv.LLPIN ? "llp" : "company", id: String(kv.LLPIN || kv.CIN).trim(), name: tc(kv["LLP Name"] || kv["Company Name"]), doi: kv["Date of Incorporation"],
+    auth: num(kv["Authorised Capital (Rs)"]), paid: num(kv["Paid up Capital (Rs)"]), status: kv["Company Status"] || kv["LLP Status"], agm: kv["Date of last AGM"], bs: kv["Date of Balance Sheet"],
+    active: kv["ACTIVE compliance"], partners: kv["Number of Partners"], dps: kv["Number of Designated Partners"], contribution: num(kv["Total Obligation of Contribution"]), roc: kv["ROC Name"], directors:[], charges:[]};
+  const dd = aoa("Director Details"), h = dd.findIndex(r => r.includes("DIN/PAN"));
+  if (h >= 0) dd.slice(h + 1).filter(r => r[1]).forEach(r => {
+    let cat = r[4], app = r[5], ce = r[6], sg = r[7];
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(cat)) { app = cat; cat = ""; ce = r[5]; sg = r[6]; }
+    d.directors.push({din: String(r[1]).padStart(8, "0"), name: tc(r[2]), desig: r[3], cat, apptd: app, ceased: ce === "-" ? "" : ce, sign: sg});
+  });
+  const ch = aoa("IndexOfCharges"), hh = ch.findIndex(r => r.includes("Charge Holder Name"));
+  if (hh >= 0) { const hdr = ch[hh].map(String), c = n => hdr.findIndex(x => x.startsWith(n));
+    ch.slice(hh + 1).filter(r => r[c("Charge Holder Name")]).forEach(r => d.charges.push({holder: r[c("Charge Holder Name")], created: r[c("Date of Creation")], satisfied: r[c("Date of Satisfaction")] === "-" ? "" : r[c("Date of Satisfaction")],
+      amount: num(r[c("Amount")]), assetHolder: c("Asset Holder") >= 0 && r[c("Asset Holder")] !== "-" ? r[c("Asset Holder")] : ""})); }
+  return d;
+}
+function mcaObservations(){
+  const O = [], add = (sev, entity, obs, action) => O.push({sev, entity, obs, action});
+  const ms = Object.values(MCA);
+  { const fsN = E.filter(e => !mcaFor(e) && dirsFor(e).src === "FS"), naN = E.filter(e => !dirsFor(e).src);
+  add("Low", "Director data", `Directors are taken from MCA master data for ${ms.length} entities${fsN.length ? `, from FS signatories for ${fsN.length} (${fsN.map(e => shortCo(e.name)).join(", ")})` : ""}${naN.length ? `, and are not available for ${naN.length}` : ""}.`, naN.length || fsN.some(e => e.con !== "Partnership firm") ? "Download MCA master data for the remaining entities and load it with “Load MCA data”." : "Partnership firms have no MCA record; keep the partnership deed and Form 1 (Registrar of Firms) on file for partner details."); }
+  const ind = [], addl = [], bcs = [];
+  for (const m of ms) {
+    const e = E.find(x => x.cin === m.id || coKey(x.name) === coKey(m.name)); if (!e) continue;
+    m.directors.filter(d => /independent/i.test(d.cat) && !d.ceased).forEach(d => ind.push(`${d.name} (${shortCo(e.name)})`));
+    m.directors.filter(d => /additional/i.test(d.desig) && !d.ceased).forEach(d => addl.push(`${d.name} in ${shortCo(e.name)} from ${d.apptd}`));
+    const bc = boardChange(e), inc = dmy(m.doi);
+    if (bc && bc.allNew && inc && inc <= BS_DATE) bcs.push({e, bc});
+    if (m.type === "company" && m.paid != null && e.paid != null && Math.abs(m.paid - e.paid) > 1) add("Medium", e.name, `Paid-up capital per MCA ₹${lakh(m.paid)} lakh vs ₹${lakh(e.paid)} lakh in the Company Master${m.auth != null && e.auth != null && Math.abs(m.auth - e.auth) > 1 ? `; authorised ₹${lakh(m.auth)} lakh vs ₹${lakh(e.auth)} lakh` : ""}.`, "Confirm the allotment / increase (PAS-3, SH-7) and update the Company Master and shareholding list; the paid-up figure drives the Sec 185 borrowing threshold.");
+    const fs = (SEED.fin || []).find(f => coKey(f.name) === coKey(e.name));
+    if (m.type === "llp" && fs && fs.partners && m.partners != null && +m.partners !== Object.keys(fs.partners).length) add("Medium", e.name, `MCA shows ${m.partners} partners (${m.dps} designated), but the 2025-26 financial statements list ${Object.keys(fs.partners).length} partners (${Object.keys(fs.partners).join(", ")}).`, "Check Form 3 / Form 4 filings for partner changes and align the LLP agreement, MCA records and accounts.");
+    const late = m.charges.filter(c => !c.satisfied && /\d{2}\/\d{2}\/(2026)/.test(c.created) && +c.created.slice(3, 5) >= 4);
+    if (late.length) add("Medium", e.name, `New charges created after 31-03-2026: ${late.map(c => `${c.holder} ₹${lakh(c.amount)} lakh (${c.created})`).join("; ")}.`, "Update the borrowing position used for the Sec 185 exemption and Sec 186 tests; obtain sanction letters and board approvals.");
+    const third = m.charges.filter(c => !c.satisfied && c.assetHolder && !m.directors.some(d => pname(c.assetHolder).includes(pname(d.name))) && coKey(c.assetHolder) !== coKey(m.name));
+    if (third.length) add("Medium", e.name, `Open charge registered with another entity as asset holder: ${third.map(c => `${c.holder} ₹${lakh(c.amount)} lakh, asset holder ${c.assetHolder}`).join("; ")}.`, "Establish whether the company has given security for another entity’s borrowing; if so, test under Sec 185 / 186 and disclose.");
+  }
+  const lenderKeys = new Set(existingLoans().map(x => coKey(x.lender)));
+  const grpBc = bcs.filter(x => !lenderKeys.has(coKey(x.e.name)));
+  if (grpBc.length > 3) add("High", `${grpBc.length} companies`, `Boards reconstituted after 31-03-2026 – change in control of the Gurusady co-owner companies: ${grpBc.map(({e, bc}) => `${shortCo(e.name)} (${bc.added.join(" & ")}, ${bc.date})`).join("; ")}.`,
+    "Obtain the share-transfer documents (SH-4, stamp duty, board approvals), confirm the new shareholding and file DIR-12 / MGT-7. Update the shareholding list, cross-holding and Company Master; from these dates the companies are under common directors with the group, so Sec 185(2), Sec 188 and deemed-dividend tests apply to any dealings with them.");
+  for (const {e, bc} of (grpBc.length > 3 ? bcs.filter(x => lenderKeys.has(coKey(x.e.name))) : bcs)) add("High", e.name, `Board reconstituted after 31-03-2026: ${bc.added.join(", ")} appointed on ${bc.date}${bc.prev.length ? `, replacing ${bc.prev.join(", ")} (signatories / directors at 31-03-2026)` : ""}.`,
+    "Confirm the change in control (share transfers, SH-4, revised shareholding), file DIR-12 / MGT-7 updates, and update the shareholding list and cross-holding data. Inter-group loans and investments involving this company now follow the new board for Sec 185(2).");
+  if (ind.length) add("Low", `${ind.length} positions`, `MCA shows these directors in the “Independent” category although they are promoters or are linked to the group: ${ind.join(", ")}.`, "Correct the category in MCA records (DIR-12); a promoter, shareholder or relative cannot meet the Sec 149(6) independence criteria.");
+  if (addl.length) add("Low", `${addl.length} appointments`, `Additional directors: ${addl.join("; ")}.`, "An additional director holds office only up to the next AGM (Sec 161(1)); regularise at the next AGM and file DIR-12.");
+  for (const p of drPeople().filter(p => drCo(p) >= 18)) { const n = drCo(p), fsOnly = p.roles.filter(r => r.src === "FS" && E.find(x => x.name === r.entity && x.con === "Private company")).length;
+    add(n >= 20 ? "High" : "Medium", p.name, `${n} company directorships within the group (Sec 165 ceiling: 20 companies, of which not more than 10 public)${fsOnly ? `; ${fsOnly} of these are taken from FS signatories pending MCA data` : ""}.`, n >= 20 ? "Confirm the count from the director’s MBP-1 / DIR-8 disclosures and MCA DIN records, including companies outside the group; any further appointment would breach Sec 165, so resign or avoid new directorships first." : "Track the count before any new appointment; include directorships outside the group."); }
+  return O;
+}
+
+/* ================= Director register ================= */
+const DR_KNOWN_PAN = {ajaykumarshroff:{pan:"AIMPS9017P", src:"Lender schedules in FS"}, amarnathshroff:{pan:"AMQPS2466J", src:"Lender schedules in FS"}};
+let DRI = (() => { try { return JSON.parse(localStorage.getItem("cmdash2:dirInfo") || "{}"); } catch { return {}; } })();
+const drSave = () => { try { localStorage.setItem("cmdash2:dirInfo", JSON.stringify(DRI)); } catch {} };
+function drPeople(){
+  const P = {};
+  for (const e of E) { const d = dirsFor(e); for (const x of d.list) {
+    const k = pname(x.name), p = P[k] ||= {key:k, name:x.name, din:"", roles:[]};
+    if (x.din && !p.din) p.din = x.din;
+    p.roles.push({entity:e.name, desig:x.desig, cat:x.cat, apptd:x.apptd, src:d.src});
+  } }
+  return Object.values(P).sort((a, b) => b.roles.length - a.roles.length || a.name.localeCompare(b.name));
+}
+function drPanCheck(pan, name){
+  if (!pan) return {st:"na", txt:"Not entered"};
+  if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) return {st:"bad", txt:"Invalid format"};
+  if (pan[3] !== "P") return {st:"bad", txt:"4th character is not P (individual)"};
+  const sur = name.trim().split(/\s+/).pop()[0].toUpperCase();
+  if (pan[4] !== sur) return {st:"bad", txt:`5th character ${pan[4]} does not match surname initial ${sur}`};
+  return {st:"ok", txt:"Valid"};
+}
+const drAge = dob => { if (!dob) return ""; const d = new Date(dob), n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return isNaN(a) ? "" : a; };
+const drCo = p => p.roles.filter(r => { const e = E.find(x => x.name === r.entity); return e && e.con === "Private company"; }).length;
+const drMask = l4 => l4 ? `XXXX XXXX ${l4}` : "";
+function drInfo(p){ const i = DRI[p.key] || {}, kp = DR_KNOWN_PAN[p.key]; return {pan: i.pan || (kp ? kp.pan : ""), panSrc: i.pan ? "Entered" : kp ? kp.src : "", dob: i.dob || "", aad: i.aad || ""}; }
+function renderDirReg(){
+  const P = drPeople(), t = $("#tDir");
+  t.innerHTML = `<thead><tr><th>Sr</th><th>Name</th><th>DIN / DPIN</th><th>PAN</th><th>PAN check</th><th>Date of birth</th><th class="r">Age</th><th>Aadhaar (masked)</th><th class="r">Positions</th><th class="r">Company directorships</th><th>Entities and designation</th></tr></thead><tbody>` +
+    P.map((p, i) => { const inf = drInfo(p), ck = drPanCheck(inf.pan, p.name);
+      return `<tr><td class="r">${i + 1}</td><td class="name">${esc(p.name)}</td>
+      <td>${p.din ? `<span class="stamp ok">${esc(p.din)}</span>` : `<span class="small">Not on MCA data loaded</span>`}</td>
+      <td><input data-k="${p.key}" data-f="pan" value="${esc(inf.pan)}" maxlength="10" style="width:120px;text-align:left;text-transform:uppercase" aria-label="PAN of ${esc(p.name)}">${inf.panSrc && inf.panSrc !== "Entered" ? `<div class="sub">${esc(inf.panSrc)}</div>` : ""}</td>
+      <td><span class="recon ${ck.st === "ok" ? "ok" : ck.st === "bad" ? "bad" : "na"}">${esc(ck.txt)}</span></td>
+      <td><input type="date" data-k="${p.key}" data-f="dob" value="${esc(inf.dob)}" style="width:140px;text-align:left" aria-label="Date of birth of ${esc(p.name)}"></td>
+      <td class="r">${drAge(inf.dob)}</td>
+      <td><input data-k="${p.key}" data-f="aad" value="${esc(drMask(inf.aad))}" placeholder="Enter last 4 or full no." style="width:150px;text-align:left" aria-label="Aadhaar of ${esc(p.name)}"></td>
+      <td class="r">${p.roles.length}</td><td class="r">${drCo(p)}</td>
+      <td class="small" style="min-width:340px">${p.roles.map(r => `${esc(r.entity)} – ${esc(r.desig)}${/independent/i.test(r.cat) ? ` <span class="recon bad">(Independent per MCA)</span>` : ""}`).join("<br>")}</td></tr>`; }).join("") + `</tbody>`;
+  t._rows = P;
+  t.querySelectorAll("input").forEach(inp => inp.onchange = () => {
+    const k = inp.dataset.k, f = inp.dataset.f, o = DRI[k] ||= {}; let v = inp.value.trim();
+    if (f === "pan") v = v.toUpperCase().replace(/\s/g, "");
+    if (f === "aad") { const dg = v.replace(/\D/g, ""); v = dg.length >= 4 ? dg.slice(-4) : ""; }
+    o[f] = v; drSave(); renderDirReg(); renderDrLedger();
+  });
+  renderDrLedger();
+}
+function renderDrLedger(){
+  const P = drPeople(), I = P.map(p => ({p, i:drInfo(p)}));
+  const bad = I.filter(x => drPanCheck(x.i.pan, x.p.name).st === "bad");
+  const multi = P.filter(p => p.roles.length >= 10);
+  $("#drLedger").innerHTML = [
+    ["Individuals", P.length, `${P.reduce((a, p) => a + p.roles.length, 0)} positions across ${E.filter(e => dirsFor(e).list.length).length} entities`],
+    ["DIN available", `${P.filter(p => p.din).length} of ${P.length}`, "From MCA master data"],
+    ["PAN captured", `${I.filter(x => x.i.pan).length} of ${P.length}`, bad.length ? `${bad.length} failing checks` : "All entered PANs pass checks", bad.length ? "bad" : ""],
+    ["Date of birth", `${I.filter(x => x.i.dob).length} of ${P.length}`, "Entered / imported"],
+    ["Aadhaar (last 4)", `${I.filter(x => x.i.aad).length} of ${P.length}`, "Stored masked only"],
+    ["Most company directorships", (() => { const t = P.slice().sort((a, b) => drCo(b) - drCo(a))[0]; return t ? drCo(t) : 0; })(), (() => { const t = P.slice().sort((a, b) => drCo(b) - drCo(a))[0]; return t ? `${t.name} – within the group; Sec 165 limit is 20 companies (10 public), LLPs and firms excluded` : ""; })(), (() => { const t = P.slice().sort((a, b) => drCo(b) - drCo(a))[0]; return t && drCo(t) >= 18 ? "bad" : ""; })()]
+  ].map(([k, v, s, c]) => `<div><dt>${k}</dt><dd class="${c || ""}">${v}<small>${esc(s)}</small></dd></div>`).join("");
+}
+$("#drTpl").onclick = () => csvDownload("Director_Register_Entry_Template", ["Name","DIN","PAN","DOB (dd-mm-yyyy)","Aadhaar last 4"], drPeople().map(p => { const i = drInfo(p); return [p.name, p.din, i.pan, i.dob ? i.dob.split("-").reverse().join("-") : "", i.aad]; }));
+$("#drIn").onchange = async ev => {
+  const file = ev.target.files[0]; if (!file) return; const ban = $("#banner");
+  try {
+    const wb = XLSX.read(await file.arrayBuffer(), {type:"array", cellDates:true});
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:""});
+    const P = drPeople(); let n = 0, miss = [];
+    for (const r of rows) {
+      const get = re => { const k = Object.keys(r).find(k => re.test(k)); return k ? r[k] : ""; };
+      const nm = String(get(/name/i)).trim(), din = String(get(/din/i)).trim().padStart(8, "0");
+      const p = P.find(p => (din !== "00000000" && p.din === din) || pname(p.name) === pname(nm)); if (!p) { if (nm) miss.push(nm); continue; }
+      const o = DRI[p.key] ||= {};
+      const pan = String(get(/pan/i)).toUpperCase().replace(/\s/g, ""); if (pan) o.pan = pan;
+      let dob = get(/dob|birth/i); if (dob instanceof Date) dob = `${dob.getFullYear()}-${pad(dob.getMonth()+1)}-${pad(dob.getDate())}`; else { const iso = toISO(dob); if (iso) dob = iso; }
+      if (dob) o.dob = dob;
+      const ad = String(get(/aadha?ar/i)).replace(/\D/g, ""); if (ad.length >= 4) o.aad = ad.slice(-4);
+      n++;
+    }
+    drSave(); renderDirReg();
+    ban.className = "banner"; ban.textContent = `Director details updated for ${n} individual(s) from ${file.name}.${miss.length ? " Not matched: " + miss.join(", ") + "." : ""} Aadhaar kept as last four digits only.`;
+  } catch (err) { ban.className = "banner err"; ban.textContent = `Could not read ${file.name}: ${err.message}`; }
+  ev.target.value = "";
+};
+
+/* ================= Document links (GST certificate etc.) ================= */
+const DOC_TYPES = [["GST","GST certificate"],["PAN","PAN card"],["COI","Certificate of Incorporation"],["MOA","MOA / AOA / LLP agreement"],["OTHER","Other"]];
+let DOCS = (() => { try { return JSON.parse(localStorage.getItem("cmdash2:docs") || "{}"); } catch { return {}; } })();
+DOCS.set ||= {}; DOCS.links ||= {};
+const docSave = () => { try { localStorage.setItem("cmdash2:docs", JSON.stringify(DOCS)); } catch {} };
+const toHref = p => { if (!p) return ""; p = String(p).trim(); if (/^(https?|file):/i.test(p)) return p; if (/^[a-z]:[\\/]|^\\\\/i.test(p)) return "file:///" + encodeURI(p.replace(/\\/g, "/")).replace(/#/g, "%23"); return p; };
+function docLinks(e){
+  const out = [], own = DOCS.links[coKey(e.name)] || {};
+  for (const [k, label] of DOC_TYPES) {
+    let p = own[k], auto = false;
+    const st = DOCS.set[k];
+    if (!p && st && st.folder && st.pattern && !(k === "GST" && !e.gst) && !(k === "COI" && !e.cin)) {
+      const tok = (str, t, v) => str.replace(new RegExp(`[{(\\["'“”]*\\s*${t}\\s*[})\\]"'“”]*`, "gi"), v);
+      let nm = st.pattern.trim();
+      nm = tok(nm, "GSTIN", e.gst || ""); nm = tok(nm, "PAN", e.pan || ""); nm = tok(nm, "CIN", e.cin || ""); nm = tok(nm, "NAME", e.name.replace(/[\\/:*?"<>|]/g, "").trim());
+      if (!/\.[a-z0-9]{2,4}$/i.test(nm)) nm += ".pdf";
+      const folder = st.folder.trim().replace(/^"|"$/g, "").replace(/[\\/][^\\/]*\.pdf$/i, "");
+      p = folder.replace(/[\\/]+$/, "") + (/^https?:/i.test(st.folder) ? "/" : "\\") + nm; auto = true;
+    }
+    if (p) out.push({k, label, path:p, href:toHref(p), auto});
+  }
+  return out;
+}
+const docChips = e => docLinks(e).map(d => `<a class="tag" href="${esc(d.href)}" target="_blank" rel="noopener" title="${esc(d.label)}: ${esc(d.path)}${d.auto ? " (from folder pattern)" : ""}" onclick="event.stopPropagation()">${d.k} ↗</a>`).join("") || `<span class="small">–</span>`;
+function docEditor(e){
+  const own = DOCS.links[coKey(e.name)] || {}, eff = Object.fromEntries(docLinks(e).map(d => [d.k, d]));
+  return `<div style="padding:4px" onclick="event.stopPropagation()"><b>Document links</b> <span class="small">(path on this computer, e.g. C:\\Users\\NIRAJ\\Desktop\\GST\\${esc(e.gst || "GSTIN")}.pdf, or a web link; leave blank to use the folder pattern)</span>
+    <table style="width:auto;min-width:760px;margin-top:4px" class="inp"><tbody>${DOC_TYPES.map(([k, l]) => `<tr><td style="width:220px">${l}</td>
+      <td><input data-doc="${k}" data-ek="${esc(coKey(e.name))}" value="${esc(own[k] || "")}" placeholder="${esc(eff[k] && eff[k].auto ? eff[k].path : "")}" style="width:520px;text-align:left;color:#0000FF"></td>
+      <td>${eff[k] ? `<a href="${esc(eff[k].href)}" target="_blank" rel="noopener">Open ↗</a>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
+}
+function bindDocEditors(root){
+  root.querySelectorAll("input[data-doc]").forEach(inp => inp.onchange = () => {
+    const o = DOCS.links[inp.dataset.ek] ||= {}; const v = inp.value.trim().replace(/^"|"$/g, ""); if (v) o[inp.dataset.doc] = v; else delete o[inp.dataset.doc]; docSave(); renderRegister();
+  });
+}
+function renderDocSet(){
+  $("#tDocSet").innerHTML = `<thead><tr><th>Document</th><th>Folder or web location</th><th>File-name pattern</th><th>Example for first entity</th></tr></thead><tbody>` +
+    DOC_TYPES.map(([k, l]) => { const st = DOCS.set[k] || {}; const ex = E.find(e => k !== "GST" || e.gst); return `<tr><td class="name">${l}</td>
+      <td><input data-set="${k}" data-f="folder" value="${esc(st.folder || "")}" placeholder="${k === "GST" ? "C:\\Users\\NIRAJ\\Desktop\\Niraj\\GST Certificates" : ""}" style="width:340px;text-align:left;color:#0000FF"></td>
+      <td><input data-set="${k}" data-f="pattern" value="${esc(st.pattern || "")}" placeholder="${k === "GST" ? "{GSTIN}.pdf" : k === "PAN" ? "{PAN}.pdf" : k === "COI" ? "{CIN}.pdf" : "{NAME}.pdf"}" style="width:180px;text-align:left;color:#0000FF"></td>
+      <td class="small">${ex && st.folder && st.pattern ? esc((docLinks(ex).find(d => d.k === k) || {}).path || "") : ""}</td></tr>`; }).join("") + `</tbody>`;
+}
+$("#docBtn").onclick = () => { renderDocSet(); $("#docPane").classList.toggle("hidden"); };
+$("#docClose").onclick = () => $("#docPane").classList.add("hidden");
+$("#docSave").onclick = () => {
+  document.querySelectorAll("#tDocSet input[data-set]").forEach(i => { const o = DOCS.set[i.dataset.set] ||= {}; let v = i.value.trim().replace(/^"|"$/g, ""); if (i.dataset.f === "folder") v = v.replace(/[\\/][^\\/]*\.pdf$/i, ""); o[i.dataset.f] = v; });
+  docSave(); renderDocSet(); renderRegister();
+  const ban = $("#banner"); ban.className = "banner"; ban.textContent = `Document link settings saved. ${E.filter(e => docLinks(e).some(d => d.k === "GST")).length} entities now have a GST certificate link.`;
+};
+$("#docTpl").onclick = () => csvDownload("Document_Link_Template", ["Company","PAN","GSTIN","Document","Link"],
+  E.flatMap(e => DOC_TYPES.filter(([k]) => k !== "OTHER" && (k !== "GST" || e.gst)).map(([k]) => [e.name, e.pan, e.gst, k, (DOCS.links[coKey(e.name)] || {})[k] || ""])));
+$("#docIn").onchange = async ev => {
+  const f = ev.target.files[0]; if (!f) return; const ban = $("#banner");
+  try {
+    const wb = XLSX.read(await f.arrayBuffer(), {type:"array"}), rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:""});
+    let n = 0; const miss = [];
+    for (const r of rows) {
+      const g = re => { const k = Object.keys(r).find(k => re.test(k)); return k ? String(r[k]).trim() : ""; };
+      const link = g(/link|path|url/i); if (!link) continue;
+      const doc = (g(/doc|type/i) || "GST").toUpperCase().replace(/[^A-Z]/g, "").replace(/^CERTIFICATEOFINCORPORATION$/, "COI");
+      const k = DOC_TYPES.find(([c, l]) => doc.startsWith(c) || norm(l).toUpperCase() === doc) ? DOC_TYPES.find(([c, l]) => doc.startsWith(c) || norm(l).toUpperCase() === doc)[0] : "OTHER";
+      const pan = g(/^pan/i).toUpperCase(), nm = g(/company|entity|name/i);
+      const e = E.find(e => (pan && e.pan === pan) || coKey(e.name) === coKey(nm));
+      if (!e) { miss.push(nm || pan); continue; }
+      (DOCS.links[coKey(e.name)] ||= {})[k] = link; n++;
+    }
+    docSave(); renderRegister();
+    ban.className = "banner"; ban.textContent = `${n} document links imported from ${f.name}.${miss.length ? " Not matched: " + miss.join(", ") + "." : ""}`;
+  } catch (err) { ban.className = "banner err"; ban.textContent = `Could not read ${f.name}: ${err.message}`; }
+  ev.target.value = "";
+};
+
+/* ================= Inter-group loans ================= */
+const CODES = SEED.codes;
+const HOLD_DEFAULT = {
+  AKS:{t:"Individual", dir:"Y", link:""}, ARS:{t:"Individual", dir:"Y", link:""}, YSS:{t:"Individual", dir:"Y", link:""}, AAK:{t:"Individual", dir:"Y", link:""},
+  ACPL:{t:"Body corporate", dir:"N", link:"Alcove Construction Pvt. Ltd."}, AHPL:{t:"Body corporate", dir:"N", link:"Amba Highrise Pvt. Ltd."},
+  RBPL:{t:"Body corporate", dir:"N", link:"Ratnakar Buildings Pvt. Ltd."}, SHB:{t:"Individual", dir:"N", link:""}, SB:{t:"Individual", dir:"N", link:""},
+  OTHERS:{t:"Body corporate", dir:"N", link:""}
+};
+const HOLD_NOTE = {SHB:"Assumed – confirm", SB:"Assumed – confirm", OTHERS:"Conservative – confirm", ACPL:"Group company", AHPL:"Group company", RBPL:"Group company"};
+let HC = Object.assign(structuredClone(HOLD_DEFAULT), lsGet("hold", {}));
+let LIN = lsGet("lenderInputs", {});            // key -> {borr, def, fr, sp, exp, ap}
+let mxView = "route";
+let LG = [];                                      // loan-group companies
+
+function buildLoanGroup(){
+  LG = SEED.holdings.map(h => {
+    const tot = Object.values(h.h).reduce((a, b) => a + b, 0);
+    const pct = Object.fromEntries(CODES.map(c => [c, tot ? (h.h[c] || 0) / tot : 0]));
+    const m = E.find(e => coKey(e.name) === coKey(h.name));
+    return {name: m ? m.name : h.name, key: coKey(h.name), tot, pct, paid: m && m.paid != null ? m.paid : tot * 10, paidSrc: m && m.paid != null ? "master" : "shares × ₹10"};
+  });
+  for (const c of LG) {
+    c.bc = CODES.filter(k => HC[k].t === "Body corporate" && c.pct[k] > 0);
+    c.bcPct = c.bc.reduce((a, k) => a + c.pct[k], 0);
+    const big = c.bc.find(k => c.pct[k] > 0.5);
+    c.parent = big ? (HC[big].link || big) : ""; c.parentPct = big ? c.pct[big] : 0;
+    c.ownCode = CODES.find(k => HC[k].link && coKey(HC[k].link) === c.key) || "";
+    const fs = FINMAP[c.key];
+    const fsBorr = fs ? fs.lenders.filter(l => l.type !== "dir").reduce((a, l) => a + l.amt, 0) : 0;
+    const frv = fs ? (fs.fr != null ? fs.fr : fs.rs[0] - (fs.sp || 0)) : 0;
+    const fsDef = fs && fs.kind === "company" ? {borr: fsBorr.toFixed(2), def: fsBorr ? "" : "N", fr: frv.toFixed(2), sp: String(fs.sp || 0),
+      exp: (fs.exp186 != null ? fs.exp186 : (fs.lg ? fs.lg[0] : 0) + (fs.inv && /amba|ratnakar/i.test(fs.name) ? fs.inv[0] : 0)).toFixed(2), ap: (fs.ap != null ? fs.ap : frv).toFixed(2)} : {};
+    c.fs = !!fs;
+    const inp = {...fsDef, ...(LIN[c.key] || {})}, num = v => v === "" || v == null ? null : +v;
+    c.in = {borr:num(inp.borr), def:inp.def || "", fr:num(inp.fr), sp:num(inp.sp), exp:num(inp.exp), ap:num(inp.ap)};
+    c.threshold = Math.min(2 * c.paid, 5e8);                       // rupees
+    c.condA = c.bcPct === 0;
+    c.condB = c.in.borr == null ? null : c.in.borr * 1e5 < c.threshold;
+    c.condC = !c.in.def ? null : c.in.def === "N";
+    c.s185 = !c.condA || c.condB === false || c.condC === false ? "Not available" : c.condB && c.condC ? "Available" : "Provisional";
+    if (c.in.fr != null && c.in.sp != null) {
+      const fr = Math.max(0, c.in.fr) * 1e5, sp = c.in.sp * 1e5;
+      c.limit = Math.max(0.6 * (c.paid + fr + sp), fr + sp);
+      c.headroom = c.in.exp != null ? c.limit - c.in.exp * 1e5 : null;
+    } else { c.limit = null; c.headroom = null; }
+  }
+}
+function dirLink(L, B, asAt){
+  const ld = dirNamesByKey(L.key, asAt), bd = new Set(dirNamesByKey(B.key, asAt).map(pname));
+  if (ld.length) return ld.some(d => bd.has(pname(d)) || (NAME2CODE[pname(d)] && B.pct[NAME2CODE[pname(d)]] > 0));
+  return CODES.some(k => HC[k].dir === "Y" && B.pct[k] > 0);
+}
+function route(L, B, asAt){
+  if (L === B) return "—";
+  if (B.parent && coKey(B.parent) === L.key && B.parentPct >= 0.999999) return "W";
+  if (L.s185 === "Available") return "A";
+  if (L.s185 === "Provisional") return "P";
+  return dirLink(L, B, asAt) ? "B" : "C";
+}
+function ddLinks(L, B){
+  const out = CODES.filter(k => L.pct[k] >= 0.1 && B.pct[k] >= 0.2).map(k => `${k} holds ${(L.pct[k]*100).toFixed(1)}% in the lender and ${(B.pct[k]*100).toFixed(1)}% in the borrower`);
+  if (B.ownCode && L.pct[B.ownCode] >= 0.1) out.push(`the borrower itself (${B.ownCode}) holds ${(L.pct[B.ownCode]*100).toFixed(1)}% in the lender – a loan to a shareholder`);
+  return out;
+}
+const ROUTE_TXT = {
+  A:"Sec 185 exemption available – Sec 186 compliance only",
+  P:"Sec 185 exemption likely – confirm borrowings and default position, then Sec 186",
+  B:"Special Resolution u/s 185(2) required, plus Sec 186",
+  C:"Sec 185 not attracted – Sec 186 only",
+  W:"Holding company to wholly owned subsidiary – Sec 185(3)(c) exemption, Sec 186"
+};
+
+function renderLoanLedger(){
+  const n = LG.length, cnt = s => LG.filter(c => c.s185 === s).length;
+  let dd = 0, pairs = 0; for (const L of LG) for (const B of LG) if (L !== B) { pairs++; if (ddLinks(L, B).length) dd++; }
+  const excl = E.length - n;
+  $("#loanLedger").innerHTML = [
+    ["Companies in scope", INR.format(n), `${excl} entities excluded (no shareholding data / LLP / firm)`],
+    ["Sec 185 exemption available", INR.format(cnt("Available")), "Confirmed with lender inputs"],
+    ["Exemption provisional", INR.format(cnt("Provisional")), "Only individual shareholders; inputs pending"],
+    ["Special Resolution needed", INR.format(cnt("Not available")), (a => a.length > 5 ? a.slice(0, 4).join(", ") + ` and ${a.length - 4} more` : a.join(", "))(LG.filter(c => c.s185 === "Not available").map(c => c.name.replace(/\b(Private|Pvt\.?|Limited|Ltd\.?)\b\.?/gi, "").trim())), "bad"],
+    ["Deemed dividend exposure", `${INR.format(dd)} of ${INR.format(pairs)}`, "Lender–borrower pairs", dd ? "bad" : ""]
+  ].map(([k, v, s, c]) => `<div><dt>${k}</dt><dd class="${c || ""}">${v}<small>${esc(s)}</small></dd></div>`).join("");
+}
+
+function renderLoanPickers(){
+  const opts = LG.map((c, i) => `<option value="${i}">${esc(c.name)}</option>`).join("");
+  const l = $("#lnL").value, b = $("#lnB").value;
+  $("#lnL").innerHTML = opts; $("#lnB").innerHTML = opts;
+  $("#lnL").value = l || "0"; $("#lnB").value = b || "1";
+}
+function renderLoanCheck(){
+  const L = LG[+$("#lnL").value], B = LG[+$("#lnB").value], amt = parseFloat($("#lnAmt").value);
+  const out = $("#lnOut");
+  if (!L || !B) { out.innerHTML = ""; return; }
+  if (L === B) { out.innerHTML = `<p class="small">Lender and borrower are the same company. Choose two different companies.</p>`; return; }
+  const r = route(L, B), dd = ddLinks(L, B);
+  const cls = r === "B" ? "sr" : r === "P" ? "prov" : "";
+  const bcList = L.bc.map(k => `${k}${HC[k].link ? ` (${HC[k].link})` : ""} ${(L.pct[k]*100).toFixed(2)}%`).join(", ");
+  const s185 = r === "W" ? [`${esc(B.name)} is a wholly owned subsidiary of the lender.`, "Exempt under Sec 185(3)(c); no Special Resolution under Sec 186(3) for this loan."]
+    : L.s185 === "Not available" ? [
+        !L.condA ? `Exemption lost: a body corporate holds shares in the lender – ${esc(bcList)}.` : L.condB === false ? `Exemption lost: borrowings ₹${INR2.format(L.in.borr)} lakh are not below the threshold of ₹${lakh(L.threshold)} lakh.` : "Exemption lost: a repayment default subsists.",
+        r === "B" ? "The borrower is a private company in which a director of the lender is a director or member, so Sec 185(2) applies." : `Sec 185 is not attracted on the data available: the lender’s directors${FINMAP[L.key] ? ` per its FS (${FINMAP[L.key].directors.join(", ")})` : ""} are not directors or members of the borrower. Confirm the borrower’s board does not act on their directions (Sec 185(2)(c)).`,
+        ...(r === "B" ? ["Pass a Special Resolution in the lender’s general meeting with an explanatory statement giving full particulars of the loan.", "Obtain the borrower’s confirmation that the funds will be used for its principal business activities.", "File MGT-14 within 30 days of the Special Resolution."] : [])]
+    : [
+        "The lender has only individual shareholders, so condition (a) of the exemption is met.",
+        `Condition (b): borrowings from banks/FIs/bodies corporate below ₹${lakh(L.threshold)} lakh (lower of 2× paid-up ₹${lakh(L.paid)} lakh or ₹50 crore) – ${L.condB == null ? "<b>input pending</b>" : L.condB ? "met" : "not met"}.`,
+        `Condition (c): no repayment default subsisting – ${L.condC == null ? "<b>input pending</b>" : L.condC ? "met" : "not met"}.`,
+        "Test the conditions again on the date of each disbursement."];
+  const s186 = [
+    L.limit == null ? "Limit not computed – enter free reserves and securities premium for the lender below." : `Limit ₹${lakh(L.limit)} lakh${L.headroom != null ? `; existing exposure ₹${INR2.format(L.in.exp)} lakh; headroom <b>₹${lakh(L.headroom)} lakh</b>` : "; enter existing loans, guarantees and investments to get headroom"}.`,
+    ...(!isNaN(amt) && L.headroom != null ? [amt * 1e5 <= L.headroom ? `Proposed ₹${INR2.format(amt)} lakh is within headroom: unanimous Board resolution is enough.` : `Proposed ₹${INR2.format(amt)} lakh exceeds headroom: Special Resolution u/s 186(3) needed before disbursement.`] : []),
+    "Board resolution with consent of all directors present (Sec 186(5)); prior consent of any public financial institution with a subsisting term loan.",
+    "Interest not lower than the yield on the G-sec closest to the loan tenor (Sec 186(7)).",
+    "Enter in register MBP-2 within 7 days; disclose in financial statements u/s 186(4)."];
+  const ddTxt = dd.length ? [
+      `<b>Exposure exists</b> – ${dd.map(esc).join("; ")}.`,
+      L.in.ap == null ? "Enter the lender’s accumulated profits to size the exposure." : L.in.ap <= 0 ? "Lender has no accumulated profits, so no deemed dividend arises today. Re-check on each disbursement date." : `Up to ₹${INR2.format(Math.min(L.in.ap, isNaN(amt) ? L.in.ap : amt))} lakh of this loan can be treated as dividend (capped at accumulated profits of ₹${INR2.format(L.in.ap)} lakh).`,
+      "Mitigation: lend from an entity with nil or negative accumulated profits, or structure the transaction as a genuine business advance backed by a contract."]
+    : ["No shareholder meets the 10% / 20% test for this pair, so deemed dividend provisions are not attracted on current shareholding."];
+  const other = ["Disburse and repay through banking channels only (account payee cheque, draft or electronic transfer).",
+    "Borrower deducts TDS on interest and files quarterly TDS returns.",
+    "Related party disclosure in both entities’ financial statements; CARO clauses 3(iii) and 3(iv).",
+    "Monthly inter-company balance reconciliation with confirmation."];
+  const head = r === "B" ? "Permissible only after a Special Resolution u/s 185(2)" : r === "P" ? "Likely permissible – confirm Sec 185 exemption conditions" : r === "W" ? "Permissible – holding company to wholly owned subsidiary" : "Permissible – Sec 186 approvals";
+  const li = a => `<ul>${a.map(x => `<li>${x}</li>`).join("")}</ul>`;
+  const bc = boardChange(E.find(e => coKey(e.name) === L.key) || {}), rBs = route(L, B, "bs");
+  const bcNote = bc && rBs !== r ? `<div class="small" style="margin-bottom:4px">Board changed on ${esc(bc.date)} (${esc(bc.added.join(", "))} appointed${bc.prev.length ? `; previously ${esc(bc.prev.join(", "))}` : ""}). Route on the 31-03-2026 board was ${rBs}; the verdict above applies to any new loan, increase or renewal now.</div>` : "";
+  const ex = (FINMAP[B.key] || {lenders:[]}).lenders.filter(l => PAN2ENT()[l.pan] && coKey(PAN2ENT()[l.pan].name) === L.key).reduce((a, l) => a + l.amt, 0);
+  out.innerHTML = `<div class="verdict ${cls}"><b>${head}</b>${bcNote}${ex ? `<div style="margin-bottom:4px"><b style="display:inline;font-size:14px">Existing balance:</b> ₹${L2(ex)} lakh outstanding as at 31-03-2026 per the borrower’s financial statements.</div>` : ""}${esc(L.name)} lending to ${esc(B.name.replace(/\.$/, ""))}${dd.length ? ". Deemed dividend exposure: yes." : ". Deemed dividend exposure: no."}</div>
+    <div class="steps">
+      <div class="step"><h3>Sec 185 – who may lend</h3>${li(s185)}</div>
+      <div class="step"><h3>Sec 186 – limits and approvals</h3>${li(s186)}</div>
+      <div class="step"><h3>Deemed dividend – Sec 2(40)(e)</h3>${li(ddTxt)}</div>
+      <div class="step"><h3>Other compliance</h3>${li(other)}</div>
+    </div>`;
+}
+
+function renderMatrix(){
+  const short = n => n.replace(/\b(Private|Pvt\.?|Limited|Ltd\.?)\b\.?/gi, "").trim();
+  $("#mxRoute").setAttribute("aria-pressed", mxView === "route"); $("#mxDD").setAttribute("aria-pressed", mxView === "dd");
+  $("#mxKey").innerHTML = mxView === "route"
+    ? Object.entries(ROUTE_TXT).filter(([k]) => "ABP".includes(k) || LG.some(L => LG.some(B => route(L, B) === k))).map(([k, t]) => `<span><b class="${k}" style="background:var(--${k === "A" ? "ok" : k === "B" ? "seal" : k === "P" ? "ledger" : "ochre"}-soft)">${k}</b>${t}</span>`).join("")
+    : `<span><b style="background:var(--seal-soft);color:var(--seal)">Y</b>10% / 20% shareholder link exists</span><span><b style="background:var(--ok-soft);color:var(--ok)">N</b>No link</span>`;
+  let h = `<thead><tr><th></th>${LG.map(c => `<th class="col" title="${esc(c.name)}">${esc(short(c.name))}</th>`).join("")}</tr></thead><tbody>`;
+  LG.forEach((L, i) => {
+    h += `<tr><th class="rowh" title="${esc(L.name)}">${esc(short(L.name))}</th>`;
+    LG.forEach((B, j) => {
+      if (i === j) { h += `<td class="self"></td>`; return; }
+      const v = mxView === "route" ? route(L, B) : (ddLinks(L, B).length ? "Y" : "N");
+      h += `<td class="${v}" data-i="${i}" data-j="${j}" title="${esc(L.name)} → ${esc(B.name)}">${v}</td>`;
+    });
+    h += `</tr>`;
+  });
+  const t = $("#mx"); t.innerHTML = h + `</tbody>`;
+  t.querySelectorAll("td[data-i]").forEach(td => td.onclick = () => {
+    $("#lnL").value = td.dataset.i; $("#lnB").value = td.dataset.j; renderLoanCheck();
+    $("#lnL").scrollIntoView({behavior:"smooth", block:"center"});
+  });
+}
+
+function renderLenders(){
+  const t = $("#tLend");
+  const inp = (c, k) => `<input type="number" step="0.01" data-k="${k}" data-c="${c.key}" value="${c.in[k] ?? ""}" aria-label="${k} for ${esc(c.name)}">`;
+  t.innerHTML = `<thead><tr><th>Lender</th><th class="r">Paid-up</th><th class="r">Body corporate holding</th><th class="r">Threshold (lower of 2× PUC, ₹50 cr)</th><th class="r">Borrowings (banks/FIs/BC)</th><th>Default?</th><th>Sec 185 exemption</th><th class="r">Free reserves</th><th class="r">Securities premium</th><th class="r">Sec 186 limit</th><th class="r">Existing exposure</th><th class="r">Headroom</th><th class="r">Accumulated profits</th><th>Holding company</th></tr></thead><tbody>` +
+    LG.map(c => `<tr><td class="name">${esc(c.name)}${c.fs ? `<span class="fs" title="Inputs pre-filled from audited FS 31-03-2026; your edits override">FS 2026</span>` : ""}<div class="sub">Paid-up from ${c.paidSrc}</div></td>
+      <td class="r">${lakh(c.paid)}</td><td class="r">${c.bcPct ? (c.bcPct*100).toFixed(2) + "%" : "–"}</td><td class="r">${lakh(c.threshold)}</td>
+      <td class="r">${inp(c, "borr")}</td>
+      <td><select data-k="def" data-c="${c.key}" aria-label="Default for ${esc(c.name)}"><option value=""></option><option ${c.in.def === "N" ? "selected" : ""}>N</option><option ${c.in.def === "Y" ? "selected" : ""}>Y</option></select></td>
+      <td><span class="recon ${c.s185 === "Available" ? "ok" : c.s185 === "Not available" ? "bad" : "na"}">${c.s185}</span></td>
+      <td class="r">${inp(c, "fr")}</td><td class="r">${inp(c, "sp")}</td><td class="r">${c.limit == null ? "" : lakh(c.limit)}</td>
+      <td class="r">${inp(c, "exp")}</td><td class="r">${c.headroom == null ? "" : lakh(c.headroom)}</td><td class="r">${inp(c, "ap")}</td>
+      <td>${esc(c.parent ? `${c.parent} (${(c.parentPct*100).toFixed(2)}%)` : "")}</td></tr>`).join("") + `</tbody>`;
+  t.querySelectorAll("input,select").forEach(el => el.onchange = () => {
+    (LIN[el.dataset.c] ||= {})[el.dataset.k] = el.value; lsSet("lenderInputs", LIN); renderLoans();
+  });
+}
+function renderHolders(){
+  const t = $("#tHold");
+  t.innerHTML = `<thead><tr><th>Code</th><th>Type</th><th>Director in lenders?</th><th>Group company</th><th>Basis</th></tr></thead><tbody>` +
+    CODES.map(k => `<tr><td class="name">${k}</td>
+      <td><select data-h="${k}" data-f="t" style="width:140px"><option ${HC[k].t === "Individual" ? "selected" : ""}>Individual</option><option ${HC[k].t === "Body corporate" ? "selected" : ""}>Body corporate</option></select></td>
+      <td><select data-h="${k}" data-f="dir"><option ${HC[k].dir === "Y" ? "selected" : ""}>Y</option><option ${HC[k].dir === "N" ? "selected" : ""}>N</option></select></td>
+      <td>${esc(HC[k].link)}</td><td class="small">${HOLD_NOTE[k] || "Promoter – assumed director"}</td></tr>`).join("") +
+    `</tbody><tfoot><tr><td colspan="5"><button class="lbtn" id="holdReset">Restore defaults</button></td></tr></tfoot>`;
+  t.querySelectorAll("select").forEach(s => s.onchange = () => { HC[s.dataset.h][s.dataset.f] = s.value; lsSet("hold", HC); renderLoans(); });
+  $("#holdReset").onclick = () => { HC = structuredClone(HOLD_DEFAULT); lsSet("hold", {}); renderLoans(); };
+}
+function renderLoans(){
+  buildLoanGroup(); renderLoanLedger(); renderLoanPickers(); renderLoanCheck(); renderExisting(); renderMatrix(); renderLenders(); renderHolders();
+  const rb = $("#linReset"); if (rb) rb.onclick = () => { LIN = {}; lsSet("lenderInputs", {}); renderLoans(); };
+}
+$("#lnL").oninput = renderLoanCheck; $("#lnB").oninput = renderLoanCheck; $("#lnAmt").oninput = renderLoanCheck;
+$("#mxRoute").onclick = () => { mxView = "route"; renderMatrix(); };
+$("#mxDD").onclick = () => { mxView = "dd"; renderMatrix(); };
+
+/* ================= Cross holding ================= */
+let xhView = "both";
+const HN = SEED.holderNames || {};
+const isCorp = n => /\b(pvt|private|ltd|limited|llp)\b/i.test(n) || ["ACPL","AHPL","RBPL"].includes(n);
+const hName = code => HN[code] || code;
+const shortCo = n => n.replace(/\b(Private|Pvt\.?|Limited|Ltd\.?)\b\.?/gi, "").replace(/\s+/g, " ").trim();
+const cluster = n => /sarda|piyashi|mainak|natin|nitya|pranay|vishan|raj ?mukut|mooldhan|jupiter|jagriti|limelight|mandar|millenium|beltas/i.test(n) ? "Co-owner group (Sarda until Sep 2026)" : /shroff|alcove|amba|jaya|ratnakar|asps|an industries|baid|^(AKS|ARS|YSS|AAK|ACPL|AHPL|RBPL)$/i.test(n) ? "Alcove / Shroff group" : "Not identified";
+function xhList(){
+  return SEED.holdings.map(h => { const tot = Object.values(h.h).reduce((a, b) => a + b, 0); const ent = E.find(e => coKey(e.name) === coKey(h.name)); return {name: ent ? ent.name : h.name, h: h.h, tot}; });
+}
+function xhCorporateLinks(){
+  const links = [], seen = new Set();
+  const add = (holder, investee, qty, total, unit, src) => {
+    const k = coKey(holder) + ">" + coKey(investee); if (seen.has(k)) { const l = links.find(x => x.k === k); if (l && !l.src.includes(src)) l.src += "; " + src; return; }
+    seen.add(k); links.push({k, holder, investee, qty, total, pct: total ? qty / total * 100 : 0, unit, src});
+  };
+  for (const c of xhList()) for (const [code, n] of Object.entries(c.h)) if (["ACPL","AHPL","RBPL"].includes(code)) add(hName(code), c.name, n, c.tot, "shares", "Shareholding list");
+  for (const x of SEED.xh || []) for (const [h, n] of Object.entries(x.holders)) if (isCorp(h) && !/^other/i.test(h)) add(h, x.investee, n, x.total, x.unit, x.src);
+  return links.map(l => ({...l, rel: /llp/i.test(l.investee) ? `Partner – ${l.pct.toFixed(2)}% of capital` : l.pct > 50 ? "Subsidiary (> 50%)" : l.pct >= 20 ? "Associate (≥ 20%)" : "Investment (< 20%)", cl: cluster(l.holder + " " + l.investee)}));
+}
+function renderXhLedger(){
+  const L = xhCorporateLinks(), C = xhList();
+  const subs = L.filter(l => l.pct > 50 && !/llp/i.test(l.investee)), assoc = L.filter(l => l.pct >= 20 && l.pct <= 50 && !/llp/i.test(l.investee));
+  const withCorp = C.filter(c => Object.keys(c.h).some(k => ["ACPL","AHPL","RBPL","OTHERS"].includes(k)));
+  const circ = L.filter(a => L.some(b => coKey(b.holder) === coKey(a.investee) && coKey(b.investee) === coKey(a.holder)));
+  $("#xhLedger").innerHTML = [
+    ["Companies in shareholding list", C.length, `${Object.keys(HN).length} shareholder codes`],
+    ["Inter-corporate holdings", L.length, "From list and financial statements"],
+    ["Subsidiaries (> 50%)", subs.length, subs.map(l => `${shortCo(l.investee)} (${shortCo(l.holder)})`).join(", "), subs.length ? "" : ""],
+    ["Associates (20–50%)", assoc.length, assoc.map(l => `${shortCo(l.investee)} (${shortCo(l.holder)})`).join(", ")],
+    ["Companies with a corporate shareholder", withCorp.length, withCorp.map(c => shortCo(c.name)).join(", ")],
+    ["Circular / reciprocal holdings", circ.length, circ.length ? circ.map(l => shortCo(l.holder)).join(", ") : "None found", circ.length ? "bad" : ""]
+  ].map(([k, v, s, c]) => `<div><dt>${k}</dt><dd class="${c || ""}">${v}<small>${esc(s)}</small></dd></div>`).join("");
+}
+const heat = p => p > 0 ? `background:color-mix(in srgb, var(--ledger) ${Math.min(45, 6 + p * 0.45)}%, transparent)` : "";
+function renderXhMatrix(){
+  document.querySelectorAll("[data-xv]").forEach(b => b.setAttribute("aria-pressed", b.dataset.xv === xhView));
+  const C = xhList(), codes = SEED.codes;
+  const t = $("#tXH");
+  const cell = (n, tot) => { if (!n) return `<td class="r" data-v="">–</td>`; const p = n / tot * 100;
+    const v = xhView === "pct" ? p : n;
+    const txt = xhView === "shares" ? INR.format(n) : xhView === "pct" ? p.toFixed(2) + "%" : `${INR.format(n)}<div class="sub">${p.toFixed(2)}%</div>`;
+    return `<td class="r" data-v="${v}" style="${heat(p)}">${txt}</td>`; };
+  t.innerHTML = `<thead><tr><th>Company</th>${codes.map(k => `<th class="r" title="${esc(hName(k))}" style="${isCorp(k) || k === "OTHERS" ? "color:var(--seal)" : ""}">${k}<div class="sub" style="white-space:normal;min-width:80px">${esc(hName(k).replace(/ \(not identified\)/, ""))}</div></th>`).join("")}<th class="r">Total shares</th><th class="r">Corporate holding %</th><th>Largest holder</th></tr></thead><tbody>` +
+    C.map(c => { const corp = codes.filter(k => ["ACPL","AHPL","RBPL","OTHERS"].includes(k)).reduce((a, k) => a + (c.h[k] || 0), 0) / c.tot * 100;
+      const top = Object.entries(c.h).sort((a, b) => b[1] - a[1])[0];
+      return `<tr><td class="name">${esc(c.name)}</td>${codes.map(k => cell(c.h[k] || 0, c.tot)).join("")}<td class="r" data-v="${c.tot}"><b>${INR.format(c.tot)}</b></td><td class="r" data-v="${corp}">${corp ? `<span class="recon bad">${corp.toFixed(2)}%</span>` : "–"}</td><td data-v="${esc(hName(top[0]))}">${esc(hName(top[0]))} (${(top[1] / c.tot * 100).toFixed(2)}%)</td></tr>`; }).join("") +
+    `</tbody><tfoot><tr><td>Companies held</td>${codes.map(k => `<td class="r">${C.filter(c => c.h[k]).length}</td>`).join("")}<td class="r">${C.length}</td><td></td><td></td></tr></tfoot>`;
+}
+function renderXhMap(){
+  const L = xhCorporateLinks(), svg = $("#xhMap");
+  const holders = [...new Set(L.map(l => l.holder))].sort((a, b) => cluster(a).localeCompare(cluster(b)) || a.localeCompare(b));
+  const inv = [...new Set(L.map(l => l.investee))];
+  const order = n => { const hs = L.filter(l => l.investee === n).map(l => holders.indexOf(l.holder)); return Math.min(...hs) * 100 + inv.indexOf(n); };
+  inv.sort((a, b) => order(a) - order(b));
+  const rowH = 30, W = 1000, H = Math.max(holders.length, inv.length) * rowH + 40, x1 = 260, x2 = W - 300;
+  const yH = i => 30 + i * (H - 40) / Math.max(1, holders.length - 1 || 1) * (holders.length > 1 ? 1 : 0) + (holders.length === 1 ? (H - 40) / 2 : 0);
+  const yI = i => 30 + i * rowH;
+  const hy = {}; holders.forEach((h, i) => hy[h] = holders.length > 1 ? 30 + i * ((inv.length * rowH - rowH) / (holders.length - 1)) : 30 + (inv.length - 1) * rowH / 2);
+  let s = "";
+  L.forEach(l => { const y1 = hy[l.holder], y2 = yI(inv.indexOf(l.investee)), sw = Math.max(1.2, l.pct / 12);
+    const col = l.pct > 50 ? "var(--seal)" : l.pct >= 20 ? "var(--ochre)" : "var(--c-firm)";
+    s += `<path d="M${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${y2}" fill="none" stroke="${col}" stroke-width="${sw}" opacity=".75"><title>${esc(l.holder)} → ${esc(l.investee)}: ${l.pct.toFixed(2)}%</title></path>`;
+    if (l.pct >= 10) { const t = 0.62, mx = (1-t)**3*x1 + 3*(1-t)**2*t*(x1+x2)/2 + 3*(1-t)*t*t*(x1+x2)/2 + t**3*x2, my = (1-t)**3*y1 + 3*(1-t)**2*t*y1 + 3*(1-t)*t*t*y2 + t**3*y2;
+      s += `<text class="val" x="${mx}" y="${my - 5}" text-anchor="middle" style="paint-order:stroke;stroke:var(--sheet);stroke-width:4px">${l.pct.toFixed(2)}%</text>`; } });
+  holders.forEach(h => s += `<circle cx="${x1}" cy="${hy[h]}" r="5" fill="var(--ink)"/><text class="lbl" x="${x1 - 10}" y="${hy[h] + 4}" text-anchor="end">${esc(shortCo(h))}</text>`);
+  inv.forEach((n, i) => s += `<circle cx="${x2}" cy="${yI(i)}" r="5" fill="var(--ink)"/><text class="lbl" x="${x2 + 10}" y="${yI(i) + 4}">${esc(shortCo(n))}</text>`);
+  s += `<text x="${x1}" y="14" text-anchor="middle" style="font-weight:600">Holder</text><text x="${x2}" y="14" text-anchor="middle" style="font-weight:600">Investee</text>`;
+  const h = inv.length * rowH + 30;
+  svg.setAttribute("viewBox", `0 0 ${W} ${h}`); svg.setAttribute("width", W); svg.setAttribute("height", h); svg.innerHTML = s;
+}
+function renderXhCorp(){
+  const L = xhCorporateLinks();
+  $("#tXC").innerHTML = `<thead><tr><th>Holder</th><th>Investee</th><th class="r">Shares / capital held</th><th class="r">Out of</th><th class="r">% held</th><th>Relationship</th><th>Cluster</th><th>Source</th></tr></thead><tbody>` +
+    L.sort((a, b) => b.pct - a.pct).map(l => `<tr><td class="name">${esc(l.holder)}</td><td>${esc(l.investee)}</td><td class="r">${l.unit === "shares" ? INR.format(l.qty) : INR2.format(l.qty)}</td><td class="r">${l.unit === "shares" ? INR.format(l.total) : INR2.format(l.total) + " (" + esc(l.unit) + ")"}</td><td class="r"><b>${l.pct.toFixed(2)}%</b></td>
+      <td><span class="recon ${l.pct > 50 ? "bad" : l.pct >= 20 ? "na" : ""}">${esc(l.rel)}</span></td><td class="small">${esc(l.cl)}</td><td class="small">${esc(l.src)}</td></tr>`).join("") + `</tbody>`;
+}
+function renderXhSummary(){
+  const C = xhList();
+  $("#tXS").innerHTML = `<thead><tr><th>Shareholder</th><th>Type</th><th class="r">Companies</th><th class="r">> 50%</th><th class="r">20–50%</th><th class="r">10–20%</th><th class="r">< 10%</th></tr></thead><tbody>` +
+    SEED.codes.map(k => { const ps = C.filter(c => c.h[k]).map(c => c.h[k] / c.tot * 100);
+      return `<tr><td class="name">${esc(hName(k))}<div class="sub">${k}</div></td><td>${isCorp(k) ? "Body corporate" : k === "OTHERS" ? "Not identified" : "Individual"}</td><td class="r">${ps.length}</td><td class="r">${ps.filter(p => p > 50).length || "–"}</td><td class="r">${ps.filter(p => p >= 20 && p <= 50).length || "–"}</td><td class="r">${ps.filter(p => p >= 10 && p < 20).length || "–"}</td><td class="r">${ps.filter(p => p < 10).length || "–"}</td></tr>`; }).join("") + `</tbody>`;
+}
+function renderXhRecon(){
+  const C = xhList(), rows = [];
+  const n2c = n => { const k = NAME2CODE[pname(n)]; if (k) return k; const h = Object.entries(HN).find(([, v]) => coKey(v) === coKey(n)); return h ? h[0] : /^others/i.test(n) ? "OTHERS" : null; };
+  for (const x of (SEED.xh || []).filter(x => x.kind === "company")) {
+    const c = C.find(c => coKey(c.name) === coKey(x.investee)); if (!c) continue;
+    const codes = new Set([...Object.keys(c.h)]), fsBy = {};
+    for (const [n, q] of Object.entries(x.holders)) { const k = n2c(n) || n; fsBy[k] = (fsBy[k] || 0) + q; codes.add(k); }
+    for (const k of codes) { const a = c.h[k] || 0, b = fsBy[k] || 0; rows.push({co:c.name, holder: HN[k] || k, a, b, d: b - a}); }
+  }
+  $("#tXR").innerHTML = `<thead><tr><th>Company</th><th>Shareholder</th><th class="r">Per list</th><th class="r">Per FS</th><th class="r">Difference</th><th>Status</th></tr></thead><tbody>` +
+    rows.map(r => `<tr><td class="name">${esc(r.co)}</td><td>${esc(r.holder)}</td><td class="r">${r.a ? INR.format(r.a) : "–"}</td><td class="r">${r.b ? INR.format(r.b) : "–"}</td><td class="r">${r.d ? INR.format(r.d) : "–"}</td><td><span class="recon ${r.d ? "bad" : "ok"}">${r.d ? "Mismatch" : "Agrees"}</span></td></tr>`).join("") + `</tbody>`;
+}
+function renderXhOther(){
+  const X = (SEED.xh || []).filter(x => x.kind === "company" && !xhList().some(c => coKey(c.name) === coKey(x.investee)));
+  const hs = [...new Set(X.flatMap(x => Object.keys(x.holders)))].sort((a, b) => (isCorp(b) - isCorp(a)) || a.localeCompare(b));
+  const cell = (n, tot) => { if (!n) return `<td class="r" data-v="">–</td>`; const p = n / tot * 100; const v = xhView === "pct" ? p : n;
+    return `<td class="r" data-v="${v}" style="${heat(p)}">${xhView === "shares" ? INR.format(n) : xhView === "pct" ? p.toFixed(2) + "%" : `${INR.format(n)}<div class="sub">${p.toFixed(2)}%</div>`}</td>`; };
+  $("#tXO").innerHTML = `<thead><tr><th>Company</th>${hs.map(h => `<th class="r" style="${isCorp(h) ? "color:var(--seal)" : ""}"><div style="white-space:normal;min-width:90px">${esc(shortCo(h))}</div></th>`).join("")}<th class="r">Total shares</th><th>Source</th></tr></thead><tbody>` +
+    X.map(x => `<tr><td class="name">${esc(x.investee)}</td>${hs.map(h => cell(x.holders[h] || 0, x.total)).join("")}<td class="r" data-v="${x.total}"><b>${INR.format(x.total)}</b></td><td class="small">${esc(x.src)}</td></tr>`).join("") + `</tbody>`;
+}
+function renderXh(){ renderBO(); renderXhLedger(); renderXhMatrix(); renderXhMap(); renderXhCorp(); renderXhSummary(); renderXhRecon(); renderXhOther(); }
+document.querySelectorAll("[data-xv]").forEach(b => b.onclick = () => { xhView = b.dataset.xv; renderXhMatrix(); renderXhOther(); });
+
+/* ================= Individual beneficial ownership (look-through) ================= */
+let boView = "eff", boSrc = "list", boCl = "Alcove / Shroff group", boSub = "hold";
+const CORP_CODE = {ACPL:"Alcove Construction Pvt. Ltd.", AHPL:"Amba Highrise Pvt. Ltd.", RBPL:"Ratnakar Buildings Pvt. Ltd."};
+function boHoldingMap(){
+  // investee key -> {name, holders: {holderName: fraction}}
+  const M = {};
+  for (const x of SEED.xh || []) { const tot = Object.values(x.holders).reduce((a, b) => a + b, 0); M[coKey(x.investee)] = {name:x.investee, src:"FS", holders:Object.fromEntries(Object.entries(x.holders).map(([h, q]) => [h, q / tot]))}; }
+  for (const c of xhList()) {
+    const k = coKey(c.name);
+    if (boSrc === "fs" && M[k]) continue;
+    M[k] = {name:c.name, src:"List", holders:Object.fromEntries(Object.entries(c.h).map(([code, q]) => [CORP_CODE[code] || (code === "OTHERS" ? "Others (unidentified)" : code === "SHB" || code === "SB" ? `${code} (unidentified)` : hName(code)), q / c.tot]))};
+  }
+  return M;
+}
+const isUnident = n => /unidentified|^others|other partners/i.test(n);
+function boTrace(M, key, chain = [], seen = new Set()){
+  // returns list of {person, pct, path:[{via, pct}]}
+  const node = M[key]; if (!node || seen.has(key)) return [];
+  const out = []; seen = new Set(seen); seen.add(key);
+  for (const [h, f] of Object.entries(node.holders)) {
+    const hk = coKey(h);
+    if (isCorp(h) && !isUnident(h)) {
+      if (M[hk] && !seen.has(hk)) for (const r of boTrace(M, hk, [], seen)) out.push({person:r.person, pct:f * r.pct, path:[{via:h, pct:f}, ...r.path]});
+      else out.push({person:`${shortCo(h)} (holders not available)`, pct:f, path:[], unk:true});
+    } else out.push({person:h, pct:f, path:[], unk:isUnident(h)});
+  }
+  return out;
+}
+function boCompute(){
+  const M = boHoldingMap(), rows = [];
+  for (const [k, node] of Object.entries(M)) {
+    const cl = cluster(node.name);
+    if (boCl && cl !== boCl) continue;
+    const parts = boTrace(M, k), by = {};
+    for (const p of parts) { const r = by[p.person] ||= {person:p.person, dir:0, ind:0, paths:[], unk:!!p.unk}; if (p.path.length) { r.ind += p.pct; r.paths.push(p); } else r.dir += p.pct; }
+    rows.push({key:k, name:node.name, src:node.src, kind: /llp/i.test(node.name) ? "LLP" : "Company", people:Object.values(by)});
+  }
+  return {M, rows};
+}
+function boSbo(M, company, r){
+  const tot = r.dir + r.ind;
+  if (r.unk) return {flag:"na", txt:"Not traced to an individual – identify the beneficial owner"};
+  if (!r.ind) return {flag:"none", txt: tot >= 0.1 ? "Direct holding only – registered and beneficial owner; not an SBO case by itself" : "Direct holding below 10%"};
+  if (tot < 0.1) return {flag:"none", txt:"Direct + indirect below 10%"};
+  const members = [...new Set(r.paths.map(p => p.path[0].via))];
+  const maj = members.filter(m => { const n = M[coKey(m)]; return n && (n.holders[r.person] || 0) > 0.5; });
+  if (maj.length) return {flag:"sbo", txt:`SBO – holds a majority stake in ${maj.map(shortCo).join(", ")}; file BEN-1 / BEN-2`};
+  const best = members.map(m => { const n = M[coKey(m)]; return `${shortCo(m)} ${(((n && n.holders[r.person]) || 0) * 100).toFixed(2)}%`; }).join(", ");
+  return {flag:"review", txt:`Review – 10%+ including indirect, but no individual majority in the member (${best}). SBO if acting together with family or exercising control / significant influence`};
+}
+const pct2 = v => v ? (v * 100).toFixed(2) + "%" : "–";
+function renderBO(){
+  document.querySelectorAll("[data-bov]").forEach(b => b.setAttribute("aria-pressed", b.dataset.bov === boView));
+  const {M, rows} = boCompute();
+  const persons = [...new Set(rows.flatMap(r => r.people.map(p => p.person)))];
+  const totP = n => rows.reduce((a, r) => a + ((r.people.find(p => p.person === n) || {}).dir || 0) + ((r.people.find(p => p.person === n) || {}).ind || 0), 0);
+  persons.sort((a, b) => (isUnident(a) || /not available/.test(a)) - (isUnident(b) || /not available/.test(b)) || totP(b) - totP(a));
+  const val = p => !p ? 0 : boView === "dir" ? p.dir : boView === "ind" ? p.ind : p.dir + p.ind;
+  $("#tBO").innerHTML = `<thead><tr><th>Entity</th><th>Source</th>${persons.map(n => `<th class="r" style="${isUnident(n) || /not available/.test(n) ? "color:var(--muted)" : ""}"><div style="white-space:normal;min-width:84px">${esc(n)}</div></th>`).join("")}<th class="r">Total</th><th>Largest beneficial owner</th></tr></thead><tbody>` +
+    rows.map(r => { const tot = r.people.reduce((a, p) => a + val(p), 0), top = r.people.filter(p => !p.unk).sort((a, b) => (b.dir + b.ind) - (a.dir + a.ind))[0];
+      return `<tr><td class="name">${esc(r.name)}${r.kind === "LLP" ? ` <span class="tag">LLP</span>` : ""}</td><td class="small">${r.src === "FS" ? "FS" : "List"}</td>${persons.map(n => { const p = r.people.find(x => x.person === n), v = val(p);
+        const tip = p ? `${n}: direct ${pct2(p.dir)}, indirect ${pct2(p.ind)}${p.paths.length ? "\n" + p.paths.map(x => "via " + x.path.map(s => `${shortCo(s.via)} ${(s.pct * 100).toFixed(2)}%`).join(" → ") + ` = ${(x.pct * 100).toFixed(2)}%`).join("\n") : ""}` : "";
+        return `<td class="r" data-v="${v ? v * 100 : ""}" title="${esc(tip)}" style="${heat(v * 100)}">${v ? (v * 100).toFixed(2) + "%" : "–"}${p && p.ind && boView === "eff" ? `<div class="sub">incl. ${(p.ind * 100).toFixed(2)}% indirect</div>` : ""}</td>`; }).join("")}
+        <td class="r" data-v="${tot * 100}"><b>${(tot * 100).toFixed(2)}%</b></td><td data-v="${top ? esc(top.person) : ""}">${top ? `${esc(top.person)} (${((top.dir + top.ind) * 100).toFixed(2)}%)` : "–"}</td></tr>`; }).join("") + `</tbody>`;
+  // detail
+  const det = rows.flatMap(r => r.people.map(p => ({r, p, s: boSbo(M, r.name, p)})));
+  const fl = {sbo:"bad", review:"na", none:"ok", na:"na"};
+  $("#tBOD").innerHTML = `<thead><tr><th>Entity</th><th>Individual</th><th class="r">Direct %</th><th class="r">Indirect %</th><th class="r">Effective %</th><th>Holding path</th><th>SBO assessment</th></tr></thead><tbody>` +
+    det.sort((a, b) => a.r.name.localeCompare(b.r.name) || (b.p.dir + b.p.ind) - (a.p.dir + a.p.ind)).map(({r, p, s}) => `<tr><td class="name">${esc(r.name)}</td><td>${esc(p.person)}</td><td class="r">${pct2(p.dir)}</td><td class="r">${pct2(p.ind)}</td><td class="r"><b>${pct2(p.dir + p.ind)}</b></td>
+      <td class="small">${[p.dir ? `Direct ${pct2(p.dir)}` : "", ...p.paths.map(x => x.path.map(s => `${esc(shortCo(s.via))} ${(s.pct * 100).toFixed(2)}%`).join(" → ") + ` → ${pct2(x.pct / x.path.reduce((a, s) => a * s.pct, 1))} = ${pct2(x.pct)}`)].filter(Boolean).join("<br>")}</td>
+      <td><span class="recon ${fl[s.flag]}">${esc(s.txt)}</span></td></tr>`).join("") + `</tbody>`;
+  // ledger
+  const named = persons.filter(n => !isUnident(n) && !/not available/.test(n));
+  const sbo = det.filter(d => d.s.flag === "sbo"), rev = det.filter(d => d.s.flag === "review");
+  const unk = rows.map(r => ({r, u: r.people.filter(p => p.unk).reduce((a, p) => a + p.dir + p.ind, 0)})).filter(x => x.u > 0).sort((a, b) => b.u - a.u);
+  const indirectCos = rows.filter(r => r.people.some(p => p.ind > 0));
+  $("#boLedger").innerHTML = [
+    ["Entities traced", rows.length, boCl || "All entities"],
+    ["Named individuals", named.length, named.slice(0, 4).join(", ") + (named.length > 4 ? "…" : "")],
+    ["Entities with indirect holdings", indirectCos.length, indirectCos.map(r => shortCo(r.name)).join(", ")],
+    ["SBO – majority-stake route", sbo.length, sbo.length ? sbo.map(d => `${d.p.person} in ${shortCo(d.r.name)}`).join("; ") : "None on the majority-stake test", sbo.length ? "bad" : ""],
+    ["SBO – review (acting together)", rev.length, "10%+ including indirect, no single majority"],
+    ["Largest unidentified share", unk.length ? pct2(unk[0].u) : "–", unk.length ? shortCo(unk[0].r.name) : "All traced", unk.length ? "bad" : ""]
+  ].map(([k, v, s, c]) => `<div><dt>${k}</dt><dd class="${c || ""}">${v}<small>${esc(s)}</small></dd></div>`).join("");
+}
+document.querySelectorAll("[data-bov]").forEach(b => b.onclick = () => { boView = b.dataset.bov; renderBO(); });
+$("#boSrc").oninput = e => { boSrc = e.target.value; renderBO(); };
+$("#boCl").oninput = e => { boCl = e.target.value; renderBO(); };
+document.querySelectorAll("[data-xsub]").forEach(b => b.onclick = () => { boSub = b.dataset.xsub;
+  document.querySelectorAll("[data-xsub]").forEach(x => x.setAttribute("aria-selected", x.dataset.xsub === boSub));
+  document.querySelectorAll("[data-xpane]").forEach(p => p.classList.toggle("hidden", p.dataset.xpane !== boSub)); });
+
+/* ================= Overview filters ================= */
+const OVF = {q:"", con:"", proj:"", gst:"", sw:"", fs:"", sort:"desc"};
+function ovList(){
+  const q = norm(OVF.q), hasFs = e => !!(SEED.fin || []).find(f => coKey(f.name) === coKey(e.name));
+  return E.filter(e => (!q || norm([e.name, e.cin, e.pan, e.gst, e.addr, e.projects.join(" "), e.con, e.sw].join(" ")).includes(q)) &&
+    (!OVF.con || e.con === OVF.con) && (!OVF.proj || e.projects.includes(OVF.proj)) && (!OVF.gst || (OVF.gst === "reg" ? !!e.gst : !e.gst)) &&
+    (!OVF.sw || (e.sw || "Not stated") === OVF.sw) && (!OVF.fs || (OVF.fs === "y") === hasFs(e)));
+}
+function buildOvFilters(){
+  const opt = (sel, label, vals) => { const v = sel.value; sel.innerHTML = `<option value="">${label}</option>` + vals.map(x => `<option>${esc(x)}</option>`).join(""); sel.value = v; };
+  opt($("#ovCon"), "All constitutions", [...new Set(E.map(e => e.con))]);
+  opt($("#ovProj"), "All projects", [...new Set(E.flatMap(e => e.projects))].sort());
+  opt($("#ovSw"), "All software", [...new Set(E.map(e => e.sw || "Not stated"))]);
+}
+
+
+/* ================= Table toolkit: search, custom filters and sorting for every table ================= */
+const TK_TABLES = {tReg:"Entity register", tCap:"Capital", tFin:"Financial summary", tLenders:"Lenders", tExist:"Existing inter-group loans", mx:"Loan matrix", tLend:"Lender eligibility", tHold:"Shareholder classification", tObs:"Observations", tXH:"Shareholding matrix", tXC:"Inter-corporate holdings", tXS:"Shareholder summary", tXR:"List vs FS", tXO:"Other co-owner companies", tDir:"Director register", tBO:"Beneficial ownership matrix", tBOD:"Beneficial ownership detail"};
+const TK_OWN_SORT = new Set(["tReg", "tFin"]);       // these tables keep their own data-level sorting
+const TK = {};
+const TK_OPS = [["contains","contains"],["ncontains","does not contain"],["eq","equals"],["neq","not equal to"],["starts","starts with"],["gt",">"],["gte","≥"],["lt","<"],["lte","≤"],["between","between"],["blank","is blank"],["nblank","is not blank"]];
+function tkCellText(td){
+  if (!td) return "";
+  if (td.dataset && td.dataset.v !== undefined) return td.dataset.v;
+  const ctl = td.querySelector("input,select");
+  if (ctl) return ctl.tagName === "SELECT" ? (ctl.options[ctl.selectedIndex] || {}).text || "" : ctl.value;
+  return td.innerText.replace(/\s+/g, " ").trim();
+}
+function tkNum(s){
+  const t = String(s).replace(/₹|lakh|cr|×|,|\s/gi, "").replace(/[–—]/g, "");
+  if (/^\d{2}-\d{2}-\d{4}$/.test(String(s).trim())) { const [d, m, y] = String(s).trim().split("-"); return +(y + m + d); }
+  if (/^\(?-?\d+(\.\d+)?\)?%?$/.test(t)) { let n = parseFloat(t.replace(/[()%]/g, "")); if (/^\(.*\)$/.test(t)) n = -n; return n; }
+  return null;
+}
+function tkHeaders(table){
+  const row = table.tHead && table.tHead.rows[table.tHead.rows.length - 1];
+  return row ? [...row.cells].map((c, i) => ({i, h: c.innerText.replace(/[▲▼↑↓]/g, "").trim() || (i === 0 ? "Row" : `Column ${i + 1}`)})) : [];
+}
+function tkGroups(table){
+  const tb = table.tBodies[0]; if (!tb) return [];
+  const groups = [];
+  [...tb.rows].forEach(r => { if (r.classList.contains("detail") && groups.length) groups[groups.length - 1].rows.push(r); else groups.push({main:r, rows:[r]}); });
+  return groups;
+}
+function tkTest(val, f){
+  const s = val.toLowerCase(), v = (f.v || "").toLowerCase(), n = tkNum(val), a = tkNum(f.v), b = tkNum(f.v2);
+  switch (f.op) {
+    case "contains": return s.includes(v);
+    case "ncontains": return !s.includes(v);
+    case "eq": return n != null && a != null ? n === a : s === v;
+    case "neq": return n != null && a != null ? n !== a : s !== v;
+    case "starts": return s.startsWith(v);
+    case "gt": return n != null && a != null && n > a;
+    case "gte": return n != null && a != null && n >= a;
+    case "lt": return n != null && a != null && n < a;
+    case "lte": return n != null && a != null && n <= a;
+    case "between": return n != null && a != null && b != null && n >= Math.min(a, b) && n <= Math.max(a, b);
+    case "blank": return !s || s === "–" || s === "-";
+    case "nblank": return !!s && s !== "–" && s !== "-";
+  }
+  return true;
+}
+function tkApply(id){
+  const table = document.getElementById(id); if (!table) return;
+  const st = TK[id] ||= {q:"", filters:[], sort:null};
+  const hdr = tkHeaders(table), groups = tkGroups(table);
+  const isData = g => !(g.main.cells.length === 1 && g.main.cells[0].colSpan > 1);
+  const data = groups.filter(isData);
+  const q = st.q.toLowerCase();
+  let shown = 0;
+  for (const g of data) {
+    const cells = [...g.main.cells];
+    const okQ = !q || g.rows.map(r => r.innerText).join(" ").toLowerCase().includes(q) || cells.some(c => tkCellText(c).toLowerCase().includes(q));
+    const okF = st.filters.every(f => tkTest(tkCellText(cells[f.col]), f));
+    const vis = okQ && okF;
+    g.rows.forEach(r => r.style.display = vis ? "" : "none");
+    if (vis) shown++;
+  }
+  if (st.sort && !TK_OWN_SORT.has(id)) {
+    const {col, dir} = st.sort;
+    const key = g => tkCellText(g.main.cells[col]);
+    data.sort((x, y) => {
+      const a = key(x), b = key(y), na = tkNum(a), nb = tkNum(b);
+      const ea = !a || a === "–", eb = !b || b === "–";
+      if (ea !== eb) return ea ? 1 : -1;
+      if (na != null && nb != null) return (na - nb) * dir;
+      return a.localeCompare(b, "en-IN", {numeric:true, sensitivity:"base"}) * dir;
+    });
+    const tb = table.tBodies[0];
+    data.forEach(g => g.rows.forEach(r => tb.appendChild(r)));
+  }
+  // header sort controls
+  if (!TK_OWN_SORT.has(id) && table.tHead) {
+    const row = table.tHead.rows[table.tHead.rows.length - 1];
+    [...row.cells].forEach((th, i) => {
+      th.classList.add("tks"); th.title = "Click to sort";
+      th.querySelectorAll(".arw").forEach(a => a.remove());
+      if (st.sort && st.sort.col === i) th.insertAdjacentHTML("beforeend", `<span class="arw"> ${st.sort.dir > 0 ? "▲" : "▼"}</span>`);
+      th.onclick = () => { const s = st.sort; st.sort = !s || s.col !== i ? {col:i, dir:1} : s.dir > 0 ? {col:i, dir:-1} : null;
+        if (!st.sort) { tkRestore(id); return; } tkApply(id); };
+    });
+  }
+  // filtered subtotal row
+  if (table.tFoot) {
+    table.tFoot.querySelectorAll(".tkft").forEach(r => r.remove());
+    if (st.q || st.filters.length) {
+      const vis = data.filter(g => g.main.style.display !== "none"), ncol = hdr.length;
+      const tr = document.createElement("tr"); tr.className = "tkft";
+      let html = `<td>Filtered total (${vis.length})</td>`;
+      for (let c = 1; c < ncol; c++) {
+        const vals = vis.map(g => tkCellText(g.main.cells[c]));
+        const skip = /%|×|share|eroded|paid-up \/|reconcil|status|type|pan\b|route|confirmed|default|exemption|sr|threshold|limit/i.test(hdr[c].h) || vals.some(v => /%/.test(v));
+        const nums = vals.map(v => (!v || v === "–") ? 0 : tkNum(v));
+        html += `<td class="r">${!skip && vis.length && nums.every(n => n != null) && vals.some(v => v && v !== "–") ? INR2.format(nums.reduce((a, b) => a + b, 0)) : ""}</td>`;
+      }
+      tr.innerHTML = html; table.tFoot.appendChild(tr);
+    }
+  }
+  tkBar(id, hdr, shown, data.length, false);
+  if (id === "tFin") { const filtered = st.q || st.filters.length || finKind;
+    renderMix(filtered ? new Set(data.filter(g => g.main.style.display !== "none").map(g => g.main.dataset.k)) : null); }
+}
+function tkRestore(id){ const t = document.getElementById(id); if (t && t._rerender) t._rerender(); else renderAll(); }
+function tkBar(id, hdr, shown, total, hasFoot){
+  const table = document.getElementById(id), st = TK[id];
+  const wrap = table.closest(".tablewrap") || table;
+  let bar = document.getElementById("tk-" + id);
+  if (!bar) {
+    bar = document.createElement("div"); bar.className = "tk"; bar.id = "tk-" + id;
+    bar.innerHTML = `<input type="search" placeholder="Search ${esc(TK_TABLES[id])}" aria-label="Search ${esc(TK_TABLES[id])}">
+      <button class="lbtn" data-a="add">+ Custom filter</button><span class="chips"></span><span class="sp"></span>
+      <span class="cnt"></span><button class="lbtn" data-a="clear">Clear</button><button class="lbtn" data-a="csv">Export view (CSV)</button>`;
+    wrap.parentNode.insertBefore(bar, wrap);
+    const pane = document.createElement("div"); pane.className = "tkf hidden"; pane.id = "tkf-" + id; wrap.parentNode.insertBefore(pane, wrap);
+    const inp = bar.querySelector("input"); inp.value = st.q;
+    inp.addEventListener("input", () => { st.q = inp.value; tkApply(id); });
+    bar.querySelector('[data-a="add"]').onclick = () => tkOpenPane(id);
+    bar.querySelector('[data-a="clear"]').onclick = () => { st.q = ""; st.filters = []; st.sort = null; inp.value = ""; document.getElementById("tkf-" + id).classList.add("hidden"); tkRestore(id); };
+    bar.querySelector('[data-a="csv"]').onclick = () => tkCsv(id);
+  }
+  bar.querySelector(".cnt").textContent = `Showing ${shown} of ${total}${(st.q || st.filters.length) && hasFoot ? " (totals row covers all rows)" : ""}`;
+  bar.querySelector(".chips").innerHTML = st.filters.map((f, i) => `<span class="chip">${esc((hdr[f.col] || {}).h || "")} ${esc((TK_OPS.find(o => o[0] === f.op) || [])[1])}${["blank","nblank"].includes(f.op) ? "" : ` “${esc(f.v)}”${f.op === "between" ? ` and “${esc(f.v2)}”` : ""}`}<button aria-label="Remove filter" data-i="${i}">×</button></span>`).join("");
+  bar.querySelectorAll(".chip button").forEach(b => b.onclick = () => { st.filters.splice(+b.dataset.i, 1); tkApply(id); });
+}
+function tkOpenPane(id){
+  const pane = document.getElementById("tkf-" + id), hdr = tkHeaders(document.getElementById(id));
+  pane.innerHTML = `<label class="small">Column <select data-f="col">${hdr.map(h => `<option value="${h.i}">${esc(h.h)}</option>`).join("")}</select></label>
+    <label class="small">Condition <select data-f="op">${TK_OPS.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select></label>
+    <input data-f="v" placeholder="Value"><input data-f="v2" placeholder="and" class="hidden">
+    <button class="lbtn" data-a="ok">Apply</button><button class="lbtn" data-a="x">Cancel</button>
+    <span class="small">Filters combine with AND. Numbers ignore ₹, commas and %; dates use dd-mm-yyyy.</span>`;
+  pane.classList.remove("hidden");
+  const g = s => pane.querySelector(`[data-f="${s}"]`);
+  g("op").onchange = () => { g("v2").classList.toggle("hidden", g("op").value !== "between"); g("v").classList.toggle("hidden", ["blank","nblank"].includes(g("op").value)); };
+  pane.querySelector('[data-a="ok"]').onclick = () => { TK[id].filters.push({col:+g("col").value, op:g("op").value, v:g("v").value.trim(), v2:g("v2").value.trim()}); pane.classList.add("hidden"); tkApply(id); };
+  pane.querySelector('[data-a="x"]').onclick = () => pane.classList.add("hidden");
+  g("v").focus();
+}
+function tkCsv(id){
+  const table = document.getElementById(id), hdr = tkHeaders(table);
+  const rows = tkGroups(table).filter(g => g.main.style.display !== "none" && !(g.main.cells.length === 1 && g.main.cells[0].colSpan > 1)).map(g => [...g.main.cells].map(tkCellText));
+  csvDownload(`${TK_TABLES[id].replace(/\W+/g, "_")}_view`, hdr.map(h => h.h), rows);
+}
+function tkInit(){
+  for (const id of Object.keys(TK_TABLES)) {
+    const t = document.getElementById(id); if (!t || t._tkObs) continue;
+    t._tkObs = new MutationObserver(() => tkApply(id));
+    t._tkObs.observe(t, {childList:true});
+    tkApply(id);
+  }
+}
+
+/* ---------- Tabs, filters, export ---------- */
+function selectTab(tab){
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+  document.querySelectorAll("[data-panel]").forEach(p => p.classList.toggle("hidden", p.dataset.panel !== tab));
+  $("#ledger").classList.toggle("hidden", ["dirreg", "fin", "loans", "xh"].includes(tab));   // master summary strip not shown on these tabs
+}
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => selectTab(b.dataset.tab));
+[["#q","q"],["#fCon","con"],["#fProj","proj"],["#fGst","gst"],["#fSw","sw"],["#fDir","dir"]].forEach(([s, k]) => $(s).addEventListener("input", e => { F[k] = e.target.value; renderRegister(); }));
+$("#clearF").onclick = () => goRegister({});
+$("#fCap").oninput = renderCapital; $("#fKind").oninput = e => { finKind = e.target.value; renderFin(); }; $("#fSev").oninput = renderObs;
+
+function csvDownload(name, header, rows){
+  const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv = [header.map(q).join(","), ...rows.map(r => r.map(q).join(","))].join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\ufeff" + csv], {type:"text/csv"}));
+  a.download = `${name}_${fmtDate(new Date())}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+document.querySelectorAll("[data-export]").forEach(b => b.onclick = () => {
+  const w = b.dataset.export;
+  if (w === "reg") csvDownload("Company_Master_Register", ["Sr","Entity","Constitution","Project","Date of Incorporation","CIN / LLPIN","PAN","GSTIN","Registered Office","Authorised (₹ lakh)","Paid-up (₹ lakh)","Directors / partners","Director source","GST certificate link","Other document links","Software","All checks passed"],
+    $("#tReg")._rows.map(e => [e.sr, e.name, e.con, e.projects.join("; "), fmtDate(e.doi), e.cin || "Not applicable", e.pan, e.gst || "Not applicable", e.addr, e.auth == null ? "" : (e.auth/1e5).toFixed(2), e.paid == null ? "" : (e.paid/1e5).toFixed(2), dirsFor(e).list.map(x => x.name + (x.din ? ` (${x.din})` : "")).join("; "), dirsFor(e).src, (docLinks(e).find(d => d.k === "GST") || {}).path || "", docLinks(e).filter(d => d.k !== "GST").map(d => `${d.k}: ${d.path}`).join("; "), e.sw, e.idOk ? "Yes" : "No"]));
+  if (w === "cap") { const t = $("#tCap"); csvDownload("Company_Master_Capital", ["Company","Authorised (₹ lakh)","Paid-up (₹ lakh)","Shares 31-03-2026","Shares x 10 (₹ lakh)","Reconciliation"],
+    t._rows.map(e => [e.name, e.auth == null ? "" : (e.auth/1e5).toFixed(2), e.paid == null ? "" : (e.paid/1e5).toFixed(2), e.shares ?? "", e.shares == null ? "" : (e.shares*10/1e5).toFixed(2), t._rt[e.recon]])); }
+  if (w === "lend") csvDownload("Intergroup_Loan_Lender_Eligibility", ["Lender","Paid-up (₹ lakh)","Body corporate holding %","Threshold (₹ lakh)","Borrowings (₹ lakh)","Default","Sec 185 exemption","Free reserves","Securities premium","Sec 186 limit (₹ lakh)","Existing exposure","Headroom (₹ lakh)","Accumulated profits","Holding company","Prepared by","Reviewed by"],
+    LG.map(c => [c.name, (c.paid/1e5).toFixed(2), (c.bcPct*100).toFixed(2), (c.threshold/1e5).toFixed(2), c.in.borr ?? "", c.in.def, c.s185, c.in.fr ?? "", c.in.sp ?? "", c.limit == null ? "" : (c.limit/1e5).toFixed(2), c.in.exp ?? "", c.headroom == null ? "" : (c.headroom/1e5).toFixed(2), c.in.ap ?? "", c.parent, "", ""]));
+  if (w === "fin") csvDownload("Group_Financials_31-03-2026", ["Entity","Type","Capital","Reserves / current a/c","Net worth","Borrowings CY","Borrowings PY","From directors","From group","Other lenders","Loans given","Inventory / property","Total assets","Total income","Finance cost","Profit / (loss)","Source file","Source unit"],
+    finRows().map(r => [r.name, KIND[r.kind], r.f.sc[0], r.f.rs[0].toFixed(2), r.nw.toFixed(2), r.borr.toFixed(2), r.borrPy.toFixed(2), r.split.dir.toFixed(2), r.split.grp.toFixed(2), (r.split.bc + r.split.bank).toFixed(2), r.lg.toFixed(2), r.prop.toFixed(2), r.assets.toFixed(2), r.rev.toFixed(2), r.fin.toFixed(2), r.pat.toFixed(2), r.f.file, r.f.srcUnit || ""]));
+  if (w === "exist") csvDownload("Intergroup_Loans_Existing", ["Lender","Borrower","Amount (₹ lakh)","Route","Deemed dividend exposure",...CMP_FIELDS.map(f => f[1]),"Prepared by","Reviewed by"],
+    existingLoans().map(r => [r.lender, r.borrower, r.amt.toFixed(2), r.route, r.dd ? "Yes" : r.dd === false ? "No" : "To assess", ...CMP_FIELDS.map(([k]) => reqFields(r).some(([q]) => q === k) ? ((CMP[r.id] || {})[k]) || "Pending" : "Not required"), "", ""]));
+  if (w === "dir") csvDownload("Director_Register", ["Sr","Name","DIN / DPIN","PAN","PAN check","Date of birth","Age","Aadhaar (masked)","Positions","Company directorships","Entities and designation"],
+    drPeople().map((p, i) => { const inf = drInfo(p); return [i + 1, p.name, p.din, inf.pan, drPanCheck(inf.pan, p.name).txt, inf.dob ? inf.dob.split("-").reverse().join("-") : "", drAge(inf.dob), drMask(inf.aad), p.roles.length, drCo(p), p.roles.map(r => `${r.entity} – ${r.desig}`).join("; ")]; }));
+  if (w === "obs") csvDownload("Company_Master_Observations", ["Severity","Entity","Observation","Recommended action","Action owner","Target date","Status"], $("#tObs")._rows.map(o => [o.sev, o.entity, o.obs, o.action, "", "", "Open"]));
+});
+
+/* ---------- Load an updated workbook (same columns) ---------- */
+const COLS = {sr:["srno","sr","slno","srno."], name:["nameofcompany","companyname","nameofentity","entityname","name"], cat:["categoryproject","project","category"],
+  doi:["dateofincorporation","incorporationdate","doi"], cin:["cinllpin","cin","llpin"], pan:["pan","panno"], gst:["gst","gstin","gstno"],
+  addr:["registeredaddress","registeredoffice","address"], auth:["authorisedcapital","authorizedcapital"], paid:["paidupcapital","paidcapital"], sw:["softwareused","software","erp"]};
+function toISO(v){
+  if (v instanceof Date) return `${v.getFullYear()}-${pad(v.getMonth()+1)}-${pad(v.getDate())}`;
+  const m = String(v ?? "").match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/); return m ? `${m[3]}-${pad(m[2])}-${pad(m[1])}` : null;
+}
+$("#mcaIn").onchange = async ev => {
+  const ban = $("#banner"), ok = [], bad = [];
+  for (const file of ev.target.files) {
+    try { const d = parseMcaWorkbook(XLSX.read(await file.arrayBuffer(), {type:"array"}), file.name); MCA[d.id] = d; ok.push(d.name); }
+    catch (err) { bad.push(`${file.name}: ${err.message}`); }
+  }
+  try { const saved = lsGetMca(); ok.forEach(n => { const d = Object.values(MCA).find(m => m.name === n); if (d) saved[d.id] = d; }); localStorage.setItem("cmdash2:mca", JSON.stringify(saved)); } catch {}
+  buildFilters(); renderAll();
+  ban.className = bad.length ? "banner err" : "banner"; ban.textContent = `MCA data loaded for ${ok.length} entit${ok.length === 1 ? "y" : "ies"}${ok.length ? ": " + ok.join(", ") : ""}.${bad.length ? " Not read: " + bad.join("; ") : ""} Saved in this browser.`;
+  ev.target.value = "";
+};
+$("#fileIn").onchange = async ev => {
+  const file = ev.target.files[0]; if (!file) return;
+  const ban = $("#banner");
+  try {
+    const wb = XLSX.read(await file.arrayBuffer(), {type:"array", cellDates:true});
+    const aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, raw:true, defval:null});
+    const hIdx = aoa.slice(0, 15).findIndex(r => r && r.some(c => COLS.name.includes(norm(c))));
+    if (hIdx < 0) throw new Error("No “Name of Company” heading found in the first sheet.");
+    const map = {}; aoa[hIdx].forEach((h, i) => { for (const [k, al] of Object.entries(COLS)) if (map[k] == null && al.includes(norm(h))) map[k] = i; });
+    const rows = aoa.slice(hIdx + 1).filter(r => r && r[map.name]).map(r => {
+      const o = {}; for (const k of Object.keys(COLS)) o[k] = map[k] == null ? null : r[map[k]];
+      o.doi = toISO(o.doi); ["auth","paid"].forEach(k => { if (typeof o[k] === "string") o[k] = parseFloat(o[k].replace(/[^0-9.]/g, "")) || null; });
+      return o;
+    });
+    load(rows, {file:file.name});
+    ban.className = "banner"; ban.textContent = `Loaded ${rows.length} entities from ${file.name}. Missing columns: ${Object.keys(COLS).filter(k => map[k] == null).join(", ") || "none"}.`;
+  } catch (err) { ban.className = "banner err"; ban.textContent = `Could not read ${file.name}: ${err.message}`; }
+  ev.target.value = "";
+};
+
+load(SEED.rows, {file:`Company Master Data sheet, read ${window.__LIVE_AT.toLocaleString("en-IN", {dateStyle:"medium", timeStyle:"short"})}`});
+tkInit();
+</script>
+<script>
+// Shared layout of the Company Master Google Sheet.
+// Each tab: title, columns [header, key]. Used to build the Sheet and, in the dashboard, to read it back.
+const PAIR = (label, key) => [[`${label} FY26`, key + "#0"], [`${label} FY25`, key + "#1"]];
+const SCHEMA = {
+  entities: {title: "Entities", cols: [
+    ["Sr", "sr"], ["Company", "name"], ["Projects", "cat"], ["Date of incorporation", "doi"],
+    ["CIN / LLPIN", "cin"], ["PAN", "pan"], ["GSTIN", "gst"], ["Registered office", "addr"],
+    ["Authorised capital (₹)", "auth"], ["Paid-up capital (₹)", "paid"], ["Accounting software", "sw"]]},
+  shares: {title: "Share count", cols: [["Company", "name"], ["Shares at 31-03-2026", "shares"]]},
+  holders: {title: "Shareholders", cols: [["Code", "code"], ["Name", "name"]]},
+  holdings: {title: "Shareholding", cols: null},          // Company + one column per shareholder code
+  xh: {title: "Cross holdings", cols: [
+    ["Investee", "investee"], ["Investee total", "total"], ["Unit", "unit"], ["Kind", "kind"],
+    ["Source", "src"], ["Holder", "holder"], ["Holding", "n"]]},
+  fin: {title: "Financials", cols: [
+    ["Company", "name"], ["Source file", "file"], ["Kind", "kind"], ["Unit", "unit"], ["Unit in source", "srcUnit"],
+    ...PAIR("Share capital", "sc"), ...PAIR("Reserves / current account", "rs"), ...PAIR("Borrowings", "borr"),
+    ...PAIR("Other current liabilities", "ocl"), ...PAIR("Investments", "inv"), ...PAIR("Inventories", "invent"),
+    ...PAIR("Cash and bank", "cash"), ...PAIR("Other current assets", "oca"), ...PAIR("Total assets", "total"),
+    ...PAIR("Revenue", "rev"), ...PAIR("Other income", "oi"), ...PAIR("Finance cost", "fin"),
+    ...PAIR("Other expenses", "oexp"), ...PAIR("Profit after tax", "pat"), ...PAIR("Loans given", "lg"),
+    ["Securities premium", "sp"], ["Free reserves", "fr"], ["Accumulated profits", "ap"],
+    ["Sec 186 exposure", "exp186"], ["Preference capital", "prefCap"], ["Face value (₹)", "fv"],
+    ["Deposit given", "deposit"], ["Deposit note", "depositNote"], ["LLP current account", "llpCurrent"],
+    ["Interest rate", "rate"], ["Investment note", "invNote"], ["Capital note", "capNote"], ["Land note", "landNote"],
+    ["Office", "office"], ["Directors / partners (FS)", "directors"]]},
+  lenders: {title: "Borrowings by lender", cols: [["Company", "company"], ["Lender", "name"], ["Lender PAN", "pan"], ["Amount (₹ lakh)", "amt"], ["Type", "type"]]},
+  loans: {title: "Loans given", cols: [["Company", "company"], ["Borrower", "name"], ["Borrower PAN", "pan"], ["Amount (₹ lakh)", "amt"]]},
+  fsHold: {title: "FS holders", cols: [["Company", "company"], ["Note", "kind"], ["Holder", "holder"], ["Holding", "n"]]},
+  mca: {title: "MCA master", cols: [
+    ["CIN / LLPIN", "id"], ["Company", "name"], ["Type", "type"], ["Source file", "file"], ["Date of incorporation", "doi"],
+    ["Authorised capital (₹)", "auth"], ["Paid-up capital (₹)", "paid"], ["Status", "status"], ["Last AGM", "agm"],
+    ["Last balance sheet", "bs"], ["Active compliance", "active"], ["Partners", "partners"],
+    ["Designated partners", "dps"], ["Contribution (₹)", "contribution"], ["ROC", "roc"]]},
+  mcaDir: {title: "MCA directors", cols: [
+    ["CIN / LLPIN", "id"], ["DIN / DPIN", "din"], ["Name", "name"], ["Designation", "desig"], ["Category", "cat"],
+    ["Appointed", "apptd"], ["Ceased", "ceased"], ["Signatory", "sign"]]},
+  mcaChg: {title: "MCA charges", cols: [
+    ["CIN / LLPIN", "id"], ["Charge holder", "holder"], ["Created", "created"], ["Satisfied", "satisfied"],
+    ["Amount (₹)", "amount"], ["Asset holder", "assetHolder"]]},
+};
+
+// toTables(seed) -> {tabKey: 2D array}; fromTables({tabKey: 2D array}) -> seed. Pure, shared with the dashboard.
+function toTables(seed, SCHEMA) {
+  const T = {};
+  const put = (k, objs, cols = SCHEMA[k].cols) => {
+    T[k] = [cols.map(c => c[0]), ...objs.map(o => cols.map(([, key]) => {
+      const [f, i] = key.split("#"); let v = o[f];
+      if (i != null) v = Array.isArray(v) ? v[+i] : undefined;
+      if (Array.isArray(v)) v = v.join("; ");
+      return v == null ? "" : v;
+    }))];
+  };
+  put("entities", seed.rows);
+  put("shares", Object.entries(seed.shares).map(([name, shares]) => ({name, shares})));
+  put("holders", seed.codes.map(code => ({code, name: seed.holderNames[code] || ""})));
+  const hc = [["Company", "name"], ...seed.codes.map(c => [c, "h." + c])];
+  T.holdings = [hc.map(c => c[0]), ...seed.holdings.map(h => [h.name, ...seed.codes.map(c => h.h[c] ?? "")])];
+  put("xh", seed.xh.flatMap(x => Object.entries(x.holders).map(([holder, n]) => ({...x, holder, n}))));
+  put("fin", seed.fin);
+  put("lenders", seed.fin.flatMap(f => (f.lenders || []).map(l => ({company: f.name, ...l}))));
+  put("loans", seed.fin.flatMap(f => (f.loans || []).map(l => ({company: f.name, ...l}))));
+  put("fsHold", seed.fin.flatMap(f => [
+    ...Object.entries(f.fsHold || {}).map(([holder, n]) => ({company: f.name, kind: "Shareholding", holder, n})),
+    ...Object.entries(f.partners || {}).map(([holder, n]) => ({company: f.name, kind: "Partner", holder, n}))]));
+  const M = Object.values(seed.mca);
+  put("mca", M);
+  put("mcaDir", M.flatMap(m => (m.directors || []).map(d => ({id: m.id, ...d}))));
+  put("mcaChg", M.flatMap(m => (m.charges || []).map(c => ({id: m.id, ...c}))));
+  return T;
+}
+
+function fromTables(T, SCHEMA) {
+  const blank = v => v === "" || v == null;
+  const objs = (k) => {
+    const [head, ...rows] = T[k] || [[]];
+    const cols = SCHEMA[k].cols, idx = cols.map(([h]) => head.indexOf(h));
+    return rows.filter(r => r.some(v => !blank(v))).map(r => {
+      const o = {};
+      cols.forEach(([, key], j) => {
+        const v = idx[j] < 0 ? "" : r[idx[j]];
+        const [f, i] = key.split("#");
+        if (i != null) { (o[f] = o[f] || [])[+i] = blank(v) ? 0 : v; return; }
+        if (!blank(v)) o[f] = v;
+      });
+      return o;
+    });
+  };
+  const group = (list, by) => list.reduce((m, o) => ((m[o[by]] = m[o[by]] || []).push(o), m), {});
+  const seed = {};
+  seed.rows = objs("entities");
+  seed.shares = Object.fromEntries(objs("shares").map(o => [o.name, o.shares]));
+  const H = objs("holders"); seed.codes = H.map(h => h.code);
+  seed.holderNames = Object.fromEntries(H.filter(h => h.name).map(h => [h.code, h.name]));
+  const [hh, ...hr] = T.holdings || [[]];
+  seed.holdings = hr.filter(r => !blank(r[0])).map(r => ({name: r[0],
+    h: Object.fromEntries(hh.slice(1).map((c, j) => [c, r[j + 1]]).filter(([, v]) => !blank(v)))}));
+  const X = group(objs("xh"), "investee");
+  seed.xh = Object.values(X).map(g => ({investee: g[0].investee, total: g[0].total,
+    holders: Object.fromEntries(g.map(o => [o.holder, o.n])), src: g[0].src, kind: g[0].kind, unit: g[0].unit}));
+  const L = group(objs("lenders"), "company"), G = group(objs("loans"), "company"), F = group(objs("fsHold"), "company");
+  seed.fin = objs("fin").map(f => {
+    if (typeof f.directors === "string") f.directors = f.directors.split(/;\s*/);
+    f.lenders = (L[f.name] || []).map(({company, ...l}) => l);
+    f.loans = (G[f.name] || []).map(({company, ...l}) => l);
+    const fh = (F[f.name] || []);
+    const sh = fh.filter(o => o.kind === "Shareholding"), pt = fh.filter(o => o.kind === "Partner");
+    if (sh.length) f.fsHold = Object.fromEntries(sh.map(o => [o.holder, o.n]));
+    if (pt.length) f.partners = Object.fromEntries(pt.map(o => [o.holder, o.n]));
+    return f;
+  });
+  const D = group(objs("mcaDir"), "id"), C = group(objs("mcaChg"), "id");
+  seed.mca = Object.fromEntries(objs("mca").map(m => [m.id, {...m,
+    directors: (D[m.id] || []).map(({id, ...d}) => d), charges: (C[m.id] || []).map(({id, ...c}) => c)}]));
+  return seed;
+}
+
+/* ---------- Live data: Google Sheet + ROC folder in Drive ---------- */
+const LIVE = {
+  sheetId: "1nK-tKjoSH2Y84YE-0rOIgQgvBA238mCUBp0fK5igdRg",
+  rocFolder: "128CihawD0mDOwpsd2m1EIo5N40jzwAp0",
+  sheets: "Google Sheets", drive: "Google Drive",
+};
+const TEXT_KEYS = new Set(["din", "partners", "dps", "code", "sign"]);
+const FIX = {
+  needs_reauth: s => `Reconnect ${s} in claude.ai Settings → Connectors, then reload this page.`,
+  server_not_connected: s => `Add the ${s} connector in claude.ai Settings → Connectors, then reload this page.`,
+  selection_required: s => `You have more than one ${s} connector. Choose one when claude.ai asks, then reload this page.`,
+  not_in_manifest: s => `${s} is turned off for this page. Allow it from the page's Permissions menu, then reload.`,
+  approval_required: s => `This page needs your approval to read ${s}. Reload and choose Allow.`,
+  blocked_by_policy: s => `Your organisation's policy blocks ${s} for this page.`,
+  tool_error: s => `${s} refused the request. Check that you have at least view access to the Company Master Data sheet.`,
+};
+const liveBanner = (msg, err) => { const b = document.getElementById("banner"); b.className = err ? "banner err" : "banner"; b.textContent = msg; };
+const explain = (e, server) => (FIX[e && e.code] || (() => `${server} could not be reached (${(e && e.code) || "unknown error"}). Reload the page to try again.`))(server);
+
+async function callRetry(mcp, server, tool, input, opts) {
+  try { return await mcp.callTool(server, tool, input, opts); }
+  catch (e) {
+    if (!e || !e.retryable) throw e;
+    await new Promise(r => setTimeout(r, (e.retryAfterMs || 800) + Math.random() * 700));
+    return mcp.callTool(server, tool, input, opts);
+  }
+}
+const payloadOf = r => { let p = r && r.payload; if (typeof p === "string") { try { p = JSON.parse(p); } catch {} } return p || {}; };
+
+function coerceTab(k, rows) {
+  if (!rows.length) return [[]];
+  const head = rows[0], cols = SCHEMA[k].cols;
+  const keyAt = j => { if (!cols) return "h"; const c = cols.find(c => c[0] === head[j]); return c ? c[1] : ""; };
+  return [head, ...rows.slice(1).map(r => r.map((v, j) => {
+    if (TEXT_KEYS.has(keyAt(j))) return v;
+    const s = String(v).replace(/,/g, "").replace(/^\((.*)\)$/, "-$1");
+    return /^-?\d*\.?\d+(e[-+]?\d+)?$/i.test(s) ? +s : v;
+  }))];
+}
+
+async function loadSheet(mcp) {
+  const keys = Object.keys(SCHEMA);
+  const res = await Promise.allSettled(keys.map(k => callRetry(mcp, LIVE.sheets, "get_values",
+    {spreadsheetId: LIVE.sheetId, range: `'${SCHEMA[k].title}'`}, {cache: {staleTime: 0}})));
+  const T = {}, failed = [];
+  res.forEach((r, i) => {
+    const k = keys[i];
+    if (r.status === "fulfilled") { const p = payloadOf(r.value); T[k] = coerceTab(k, p.values || (p.content && p.content.values) || []); }
+    else { failed.push({k, e: r.reason}); T[k] = [[]]; }
+  });
+  return {T, failed};
+}
+
+function b64bytes(s) { const bin = atob(s); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
+function fileBytes(r) {
+  for (const b of (r && r.content) || []) {
+    const blob = (b.resource && b.resource.blob) || b.blob || (b.type !== "text" && b.data);
+    if (typeof blob === "string" && blob.length > 100) return b64bytes(blob);
+  }
+  const p = payloadOf(r), c = p.content || p.base64Content || p.data;
+  if (typeof c === "string" && /^[A-Za-z0-9+/=\s]{200,}$/.test(c)) return b64bytes(c.replace(/\s/g, ""));
+  return null;
+}
+
+async function loadRoc(mcp) {
+  const list = payloadOf(await callRetry(mcp, LIVE.drive, "search_files",
+    {query: `parentId = '${LIVE.rocFolder}' and trashed = false`, excludeContentSnippets: true, pageSize: 100}, {cache: {staleTime: 0}}));
+  const files = (list.files || []).filter(f => /\.xlsx?$/i.test(f.title || ""));
+  const ok = [], bad = [];
+  let next = 0;
+  const worker = async () => {
+    while (next < files.length) {
+      const f = files[next++];
+      try {
+        const r = await callRetry(mcp, LIVE.drive, "download_file_content", {fileId: f.id}, {cache: {staleTime: 30 * 60 * 1000, gcTime: 60 * 60 * 1000}});
+        const bytes = fileBytes(r); if (!bytes) throw new Error("no file content returned");
+        const d = parseMcaWorkbook(XLSX.read(bytes, {type: "array"}), f.title);
+        MCA[d.id] = d; ok.push(d.name);
+      } catch (e) { bad.push(`${f.title}: ${e.code || e.message}`); }
+    }
+  };
+  await Promise.all(Array.from({length: 6}, worker));
+  return {ok, bad, total: files.length};
+}
+
+(async () => {
+  liveBanner("Loading live data from the Company Master Data sheet…");
+  const mcp = window.claude && window.claude.use ? await window.claude.use("mcp").catch(() => null) : null;
+  if (!mcp) { liveBanner("Live data loads only when this dashboard is opened on claude.ai. Open it from its claude.ai link.", true); return; }
+  const {T, failed} = await loadSheet(mcp);
+  if (failed.some(f => f.k === "entities")) { liveBanner(explain(failed.find(f => f.k === "entities").e, LIVE.sheets), true); return; }
+  window.__SEED = fromTables(T, SCHEMA);
+  window.__LIVE_AT = new Date();
+  const app = document.createElement("script");
+  app.textContent = document.getElementById("app").textContent;
+  document.body.appendChild(app);
+  const missed = failed.map(f => SCHEMA[f.k].title);
+  liveBanner(missed.length ? `Loaded from the sheet, except these tabs: ${missed.join(", ")}. ${explain(failed[0].e, LIVE.sheets)}` : `Live data loaded from the Company Master Data sheet. Reading MCA files from the ROC folder…`, missed.length > 0);
+  try {
+    const r = await loadRoc(mcp);
+    buildFilters(); renderAll();
+    if (!missed.length) liveBanner(r.ok.length
+      ? `Live data loaded. MCA details read from ${r.ok.length} of ${r.total} files in the ROC folder.${r.bad.length ? " Not read: " + r.bad.join("; ") + "." : ""}`
+      : `Live data loaded. MCA files in the ROC folder could not be read, so MCA details come from the sheet's MCA tabs.`, r.bad.length > 0 && !r.ok.length);
+  } catch (e) {
+    if (!missed.length) liveBanner(`Live data loaded. MCA details come from the sheet's MCA tabs, because the ROC folder could not be read: ${explain(e, LIVE.drive)}`, false);
+  }
+})();
+</script>
