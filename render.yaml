@@ -1,0 +1,25 @@
+# Render Blueprint: Render → New → Blueprint → pick this repository.
+# Values marked sync: false are asked for when the Blueprint is created; they never go into GitHub.
+services:
+  - type: web
+    name: job-checklist-dashboard
+    runtime: node
+    plan: free
+    rootDir: Checklist
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: CHECKLIST_FILE_ID
+        value: 1bmgjKdSf6zITxFC6A6omZLQ6pdMi0oma
+      - key: DASHBOARD_USER
+        value: alcove
+      - key: DASHBOARD_PASSWORD
+        sync: false
+      - key: VIEWER_PASSWORD
+        sync: false
+      - key: GOOGLE_CLIENT_EMAIL
+        value: company-master-dashboard@company-master-dashboard.iam.gserviceaccount.com
+      - key: GOOGLE_PRIVATE_KEY
+        sync: false
