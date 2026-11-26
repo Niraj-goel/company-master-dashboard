@@ -9,16 +9,15 @@ Double-click `start.bat`, or run `node server.js`. It opens http://localhost:300
 - **Refresh data** re-reads Google straight away. Otherwise the server reuses a read for 2 minutes.
 - To change the data, edit the Google Sheet or add files to the ROC folder, then refresh the page.
 
-## Sign-in, roles and the access matrix
+## Sign-in and the access matrix
 
 Everyone signs in on the dashboard's own sign-in page with a personal user name and password.
 
 - **Owner**: the `DASHBOARD_USER` / `DASHBOARD_PASSWORD` account from `.env`. Always an admin, and can't be deleted from the page, so you can't lock yourself out.
-- **Admin**: sees everything, plus the **Access** tab. There it adds users, sets their role, resets passwords, switches people off, and edits the access matrix.
-- **General**: the standard staff view. By default it gets Entity register, Director register, Capital, Observations, document downloads and CSV export. It does not get Group financials, Inter-group loans, Cross holding, Refresh, the sheet and Drive links, or the local-file tools. Change any of this in the matrix.
-- **More roles** (for example Accounts) can be added from the Access tab, each with its own column in the matrix.
+- **Access tab** (admins only): the access matrix has one row per person and one column per tab, download and action. **Each person gets exactly what is ticked in their row.** Ticking **Admin** gives everything plus the Access tab. Unticking **Can sign in** blocks the person. Clicking a column heading ticks or unticks that column for everyone. Passwords are reset from the same row.
+- **New people** start with Director register, Capital, Observations, the document downloads and CSV export. Change their row afterwards. Entity register is always on.
 
-The server applies the matrix before it sends anything. Sheet tabs, ROC workbooks and document links that a role can't see are left out of the data, so they can't be read from the browser's developer tools either. A switched-off user is signed out on their next click. Changing a password ends that user's other sessions. Five wrong passwords lock that user name for 15 minutes.
+The server applies the matrix before it sends anything. Sheet tabs, ROC workbooks and document links that are not ticked for a person are left out of their data, so they can't be read from the browser's developer tools either. A switched-off user is signed out on their next click. Changing a password ends that user's other sessions. Five wrong passwords lock that user name for 15 minutes.
 
 Users and the matrix are saved in `access.json` (passwords only as scrypt hashes). The file is in `.gitignore`; never commit it. On a host that wipes its disk on restart, set `ACCESS_FILE` to a path on a persistent disk.
 
@@ -61,7 +60,7 @@ Values set in the real environment override `.env`, so on a hosting service you 
 | File | What it is |
 |---|---|
 | `server.js` | Web server: sign-in, `/` serves the page, `/api/data` returns what the user's role may see |
-| `access.js` | Users, roles, access matrix and sign-in sessions |
+| `access.js` | Users, per-person access matrix and sign-in sessions |
 | `public/login.html` | Sign-in page |
 | `google.js` | Google sign-in with the service account, plus Sheets and Drive calls |
 | `docs.js` | Matches PAN cards, GST certificates and ROC files to entities |

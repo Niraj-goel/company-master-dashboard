@@ -194,6 +194,15 @@ body.no-export [data-export],body.no-export .tk [data-a="csv"]{display:none!impo
 .who .role{border:1px solid rgba(255,255,255,.4);border-radius:10px;padding:0 8px;font-size:12px}
 .who button{background:transparent;border:0;color:#fff;text-decoration:underline;cursor:pointer;padding:0;font-size:13px}
 .amx{border-collapse:collapse;width:100%;min-width:520px}
+#amx th.vh{vertical-align:bottom;padding:6px 4px;font-weight:600}
+#amx th.grph{border-left:2px solid var(--rule);font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+#amx .colh{background:none;border:0;padding:0;font:inherit;font-size:12px;color:inherit;cursor:pointer;white-space:normal;max-width:76px;line-height:1.2}
+#amx .colh:hover{text-decoration:underline}
+#amx tr.off td{opacity:.55}
+#amx tr.own td{background:var(--paper)}
+#amx td input[type=text]{width:150px}
+#amx td input[type=password]{width:130px}
+#amx tbody tr:hover td{background:var(--ledger-soft)}
 .amx th,.amx td{border-bottom:1px solid var(--rule);padding:7px 10px;text-align:left;vertical-align:middle}
 .amx thead th{background:var(--ledger-soft);font-weight:650;white-space:nowrap}
 .amx td.c,.amx th.c{text-align:center}
@@ -248,27 +257,25 @@ body.no-export [data-export],body.no-export .tk [data-a="csv"]{display:none!impo
   <section data-panel="access" class="hidden">
     <div class="panel">
       <h2>Access matrix</h2>
-      <p class="lead">Tick what each role can see and do. The server removes everything a role can’t see before sending the page, so it can’t be read from the browser either. Admin always has full access and is the only role that sees this tab.</p>
+      <p class="lead">One row per person. Each person gets exactly what is ticked in their row, nothing more. <b>Admin</b> gives everything plus this Access tab. Untick <b>Can sign in</b> to block someone straight away. The server leaves out whatever isn't ticked before sending the page, so it can't be read from the browser either. Click a column heading to tick or untick it for everyone. Entity register is always on.</p>
       <div class="tablewrap"><table class="amx" id="amx"></table></div>
       <div class="afrm" style="margin-top:12px">
-        <input id="newRole" placeholder="New role name, e.g. Accounts" aria-label="New role name" maxlength="40">
-        <button class="lbtn" id="addRole">+ Add role</button>
+        <span class="small" id="amxDirty"></span>
         <span class="sp" style="flex:1"></span>
-        <button class="lbtn btnp" id="saveRoles">Save access matrix</button>
+        <button class="lbtn" id="amxUndo">Undo changes</button>
+        <button class="lbtn btnp" id="amxSave">Save access matrix</button>
       </div>
       <p class="amsg" id="roleMsg"></p>
     </div>
     <div class="panel">
-      <h2>Users</h2>
-      <p class="lead">Each person signs in with their own user name and password. Switch a user off to block them straight away; their open session ends on their next click. Leave the password blank to keep the current one.</p>
-      <div class="tablewrap"><table class="amx" id="ausers"></table></div>
-      <h3 style="margin:18px 0 8px">Add a user</h3>
+      <h2>Add a person</h2>
+      <p class="lead">They start with the standard ticks (Director register, Capital, Observations, downloads and CSV). Change their row in the matrix afterwards.</p>
       <div class="afrm">
-        <input id="nuUser" placeholder="User name" aria-label="User name" autocomplete="off">
+        <input id="nuUser" placeholder="User name (for sign-in)" aria-label="User name" autocomplete="off">
         <input id="nuName" placeholder="Full name" aria-label="Full name" autocomplete="off">
-        <select id="nuRole" aria-label="Role"></select>
         <input id="nuPw" type="password" placeholder="Password (8+ characters)" aria-label="Password" autocomplete="new-password">
-        <button class="lbtn btnp" id="nuAdd">Add user</button>
+        <label class="small" style="flex:0 0 auto"><input type="checkbox" id="nuAdmin"> Admin</label>
+        <button class="lbtn btnp" id="nuAdd">Add person</button>
       </div>
       <p class="amsg" id="userMsg"></p>
       <p class="small" id="accFile"></p>
@@ -1989,7 +1996,7 @@ function applyAccess() {
   document.querySelectorAll("[data-perm]").forEach(el => el.toggleAttribute("data-off", !can(el.dataset.perm)));
   document.body.classList.toggle("no-export", !can("act.export"));
   const who = document.getElementById("who");
-  const roleName = ME.admin ? "Admin" : ME.roleName || ME.role;
+  const roleName = ME.admin ? "Admin" : "User";
   who.innerHTML = ME.noLogin ? `<span>No password set: open on this computer only, as admin.</span>`
     : `<span>Signed in as <b>${escH(ME.name)}</b></span><span class="role">${escH(roleName)}</span>` +
       (ME.owner ? "" : `<button type="button" id="pwBtn">Change password</button>`) + `<button type="button" id="outBtn">Sign out</button>`;
@@ -2016,81 +2023,75 @@ function guardApp() {
   if (!can("tab.fin") && !can("tab.loans")) window.finObservations = () => [];
 }
 
-/* ---------- Admin: access matrix and users ---------- */
-let ACC = null;
-const roleOpts = sel => Object.entries(ACC.roles).map(([id, r]) => `<option value="${id}"${id === sel ? " selected" : ""}>${escH(r.name)}</option>`).join("");
+/* ---------- Admin: per-person access matrix ---------- */
+let ACC = null, ROWS = null;   // ACC: last saved state from the server; ROWS: the matrix as edited on screen
 const amsg = (id, text, ok) => { const el = document.getElementById(id); el.textContent = text; el.className = "amsg " + (ok ? "ok" : "err"); };
+const cols = () => ACC.perms.filter(p => !p.fixed);
+const dirty = () => JSON.stringify(ROWS) !== JSON.stringify(baseRows());
+const baseRows = () => ACC.users.map(u => ({user: u.user, name: u.name, admin: u.admin, active: u.active, perms: {...u.perms}, password: ""}));
 async function renderAccess(fresh) {
   if (!ME.admin) return;
-  try { if (!ACC || fresh) ACC = await api("api/admin/access"); } catch (e) { return amsg("roleMsg", e.message); }
-  drawMatrix(); drawUsers();
+  try { if (!ACC || fresh) { ACC = await api("api/admin/access"); ROWS = baseRows(); } } catch (e) { return amsg("roleMsg", e.message); }
+  drawMatrix();
 }
+function markDirty() { document.getElementById("amxDirty").textContent = dirty() ? "Unsaved changes" : ""; }
 function drawMatrix() {
-  const ids = Object.keys(ACC.roles);
-  let grp = "", html = `<thead><tr><th>What</th>${ids.map(id => `<th class="c">${escH(ACC.roles[id].name)}${id === "admin" || id === "general" ? "" :
-    ` <button class="lbtn" style="padding:0 6px;font-size:12px" data-delrole="${id}" title="Remove this role">×</button>`}</th>`).join("")}</tr></thead><tbody>`;
-  for (const p of ACC.perms) {
-    if (p.group !== grp) { grp = p.group; html += `<tr class="grp"><td colspan="${ids.length + 1}">${escH(grp)}</td></tr>`; }
-    html += `<tr><td>${escH(p.label)}${p.note ? `<span class="note">${escH(p.note)}</span>` : ""}</td>` + ids.map(id => {
-      const on = id === "admin" || p.fixed || !!ACC.roles[id].perms[p.key];
-      return `<td class="c"><input type="checkbox" data-role="${id}" data-key="${p.key}" aria-label="${escH(ACC.roles[id].name)}: ${escH(p.label)}"${on ? " checked" : ""}${id === "admin" || p.fixed ? " disabled" : ""}></td>`;
-    }).join("") + "</tr>";
-  }
-  html += `<tr class="grp"><td colspan="${ids.length + 1}">Administration</td></tr><tr><td>Access tab: users and this matrix</td>${ids.map(id =>
-    `<td class="c"><input type="checkbox" disabled${id === "admin" ? " checked" : ""} aria-label="${escH(ACC.roles[id].name)}: administration"></td>`).join("")}</tr>`;
+  const C = cols(), groups = [];
+  C.forEach(p => { const g = groups[groups.length - 1]; if (g && g.name === p.group) g.n++; else groups.push({name: p.group, n: 1}); });
+  const tick = (r, k, on, dis, label) => `<td class="c"><input type="checkbox" data-u="${r}" data-k="${k}"${on ? " checked" : ""}${dis ? " disabled" : ""} aria-label="${escH(label)}"></td>`;
+  let h = `<thead><tr><th rowspan="2">Person</th><th rowspan="2" class="c">Can sign in</th><th rowspan="2" class="c">Admin</th>` +
+    groups.map(g => `<th colspan="${g.n}" class="c grph">${escH(g.name)}</th>`).join("") + `<th rowspan="2">Reset password</th><th rowspan="2"></th></tr><tr>` +
+    C.map(p => `<th class="c vh"><button type="button" class="colh" data-col="${p.key}" title="${escH(p.label + (p.note ? " – " + p.note : ""))}. Click to tick or untick for everyone.">${escH(p.short)}</button></th>`).join("") + `</tr></thead><tbody>`;
+  if (ACC.owner) h += `<tr class="own"><td><b>${escH(ACC.owner)}</b><span class="note">Owner (server settings)</span></td>` +
+    tick("", "", true, true, "Owner can sign in") + tick("", "", true, true, "Owner is admin") + C.map(p => tick("", "", true, true, `Owner: ${p.label}`)).join("") +
+    `<td class="small">Set by DASHBOARD_PASSWORD</td><td></td></tr>`;
+  h += ROWS.map((r, i) => {
+    const who = r.name || r.user;
+    return `<tr${r.active ? "" : ' class="off"'}><td><input type="text" data-u="${i}" data-f="name" value="${escH(r.name)}" placeholder="Full name" aria-label="Full name of ${escH(r.user)}"><span class="note">${escH(r.user)}</span></td>` +
+      tick(i, "@active", r.active, false, `${who} can sign in`) + tick(i, "@admin", r.admin, false, `${who} is admin`) +
+      C.map(p => tick(i, p.key, r.admin || !!r.perms[p.key], r.admin, `${who}: ${p.label}`)).join("") +
+      `<td><input type="password" data-u="${i}" data-f="password" value="${escH(r.password)}" placeholder="New password" autocomplete="new-password" aria-label="New password for ${escH(r.user)}"></td>` +
+      `<td><button class="lbtn" data-del="${i}">Delete</button></td></tr>`;
+  }).join("");
+  if (!ROWS.length) h += `<tr><td colspan="${C.length + 5}" class="small">No one added yet. Use “Add a person” below.</td></tr>`;
   const t = document.getElementById("amx");
-  t.innerHTML = html + "</tbody>";
-  t.querySelectorAll("input[data-key]").forEach(c => c.onchange = () => { ACC.roles[c.dataset.role].perms[c.dataset.key] = c.checked; amsg("roleMsg", "Unsaved changes", false); });
-  t.querySelectorAll("[data-delrole]").forEach(b => b.onclick = () => {
-    const id = b.dataset.delrole;
-    if (ACC.users.some(u => u.role === id)) return amsg("roleMsg", `Move the users in “${ACC.roles[id].name}” to another role first.`);
-    delete ACC.roles[id]; drawMatrix(); drawUsers(); amsg("roleMsg", "Unsaved changes", false);
+  t.innerHTML = h + "</tbody>";
+  t.querySelectorAll("input[type=checkbox][data-u]:not([disabled])").forEach(c => c.onchange = () => {
+    const r = ROWS[+c.dataset.u], k = c.dataset.k;
+    if (k === "@active") r.active = c.checked; else if (k === "@admin") r.admin = c.checked; else r.perms[k] = c.checked;
+    if (k[0] === "@") drawMatrix(); markDirty();
   });
-}
-function drawUsers() {
-  document.getElementById("nuRole").innerHTML = roleOpts("general");
-  const rows = ACC.users.map((u, i) => `<tr data-i="${i}">
-    <td><b>${escH(u.user)}</b></td>
-    <td><input type="text" data-f="name" value="${escH(u.name)}" aria-label="Full name of ${escH(u.user)}"></td>
-    <td><select data-f="role" aria-label="Role of ${escH(u.user)}">${roleOpts(u.role)}</select></td>
-    <td class="c"><input type="checkbox" data-f="active"${u.active ? " checked" : ""} aria-label="${escH(u.user)} can sign in"></td>
-    <td><input type="password" data-f="password" placeholder="New password" autocomplete="new-password" aria-label="New password for ${escH(u.user)}"></td>
-    <td style="white-space:nowrap"><button class="lbtn" data-a="save">Save</button> <button class="lbtn" data-a="del">Delete</button></td></tr>`).join("");
-  const owner = ACC.owner ? `<tr><td><b>${escH(ACC.owner)}</b></td><td>Owner (server settings)</td><td>Admin</td><td class="c"><span class="pill">On</span></td><td class="small">Set by DASHBOARD_PASSWORD</td><td></td></tr>` : "";
-  const t = document.getElementById("ausers");
-  t.innerHTML = `<thead><tr><th>User name</th><th>Name</th><th>Role</th><th class="c">Can sign in</th><th>Reset password</th><th></th></tr></thead><tbody>${owner}${rows ||
-    (owner ? "" : `<tr><td colspan="6" class="small">No users yet.</td></tr>`)}</tbody>`;
-  t.querySelectorAll("tr[data-i]").forEach(tr => {
-    const u = ACC.users[+tr.dataset.i], f = k => tr.querySelector(`[data-f="${k}"]`);
-    tr.querySelector('[data-a="save"]').onclick = () => saveUser({user: u.user, name: f("name").value, role: f("role").value, active: f("active").checked, password: f("password").value});
-    tr.querySelector('[data-a="del"]').onclick = async () => {
-      if (!confirm(`Delete ${u.user}? They will no longer be able to sign in.`)) return;
-      try { ACC = await api("api/admin/user/delete", {user: u.user}); drawUsers(); amsg("userMsg", `${u.user} deleted.`, true); } catch (e) { amsg("userMsg", e.message); }
-    };
+  t.querySelectorAll("input[data-f]").forEach(inp => inp.oninput = () => { ROWS[+inp.dataset.u][inp.dataset.f] = inp.value; markDirty(); });
+  t.querySelectorAll("[data-col]").forEach(b => b.onclick = () => {
+    const k = b.dataset.col, list = ROWS.filter(r => !r.admin), on = !list.every(r => r.perms[k]);
+    list.forEach(r => r.perms[k] = on); drawMatrix(); markDirty();
+  });
+  t.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+    const r = ROWS[+b.dataset.del];
+    if (!confirm(`Delete ${r.name || r.user} (${r.user})? They will no longer be able to sign in.`)) return;
+    try { ACC = await api("api/admin/user/delete", {user: r.user}); ROWS = ROWS.filter(x => x !== r); drawMatrix(); markDirty(); amsg("roleMsg", `${r.user} deleted.`, true); }
+    catch (e) { amsg("roleMsg", e.message); }
   });
   document.getElementById("accFile").textContent = ACC.persistentWarning
-    ? `Warning: users are saved in ${ACC.file}, which this host wipes on every restart. Set ACCESS_FILE to a file on a persistent disk.` : "";
+    ? `Warning: people and their access are saved in ${ACC.file}, which this host wipes on every restart. Set ACCESS_FILE to a file on a persistent disk.` : "";
+  markDirty();
 }
-async function saveUser(b, clear) {
+document.getElementById("amxSave").onclick = async () => {
   try {
-    ACC = await api("api/admin/user", b);
-    drawUsers(); amsg("userMsg", `${b.user} saved.`, true);
-    if (clear) ["nuUser", "nuName", "nuPw"].forEach(id => document.getElementById(id).value = "");
-  } catch (e) { amsg("userMsg", e.message); }
-}
-document.getElementById("nuAdd").onclick = () => saveUser({user: document.getElementById("nuUser").value.trim(), name: document.getElementById("nuName").value,
-  role: document.getElementById("nuRole").value, active: true, password: document.getElementById("nuPw").value}, true);
-document.getElementById("addRole").onclick = () => {
-  const name = document.getElementById("newRole").value.trim(); if (!name) return;
-  let id = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "role";
-  if (id.length < 2) id += "-role";
-  while (ACC.roles[id]) id += "-2";
-  ACC.roles[id] = {name, perms: {}}; document.getElementById("newRole").value = "";
-  drawMatrix(); drawUsers(); amsg("roleMsg", `“${name}” added. Tick its access, then save.`, false);
+    ACC = await api("api/admin/users", {users: ROWS.map(r => ({...r, perms: Object.fromEntries(Object.entries(r.perms).filter(([, v]) => v))}))});
+    ROWS = baseRows(); drawMatrix(); amsg("roleMsg", "Saved. Each person gets the new access the next time they open or refresh the dashboard.", true);
+  } catch (e) { amsg("roleMsg", e.message); }
 };
-document.getElementById("saveRoles").onclick = async () => {
-  try { ACC = await api("api/admin/roles", {roles: ACC.roles}); drawMatrix(); drawUsers(); amsg("roleMsg", "Access matrix saved. It applies on each user's next page load.", true); }
-  catch (e) { amsg("roleMsg", e.message); }
+document.getElementById("amxUndo").onclick = () => { ROWS = baseRows(); drawMatrix(); amsg("roleMsg", "", true); };
+document.getElementById("nuAdd").onclick = async () => {
+  if (ROWS && dirty() && !confirm("The matrix has unsaved changes. Adding a person reloads it and drops them. Continue?")) return;
+  const v = id => document.getElementById(id);
+  const user = v("nuUser").value.trim();
+  try {
+    ACC = await api("api/admin/user", {user, name: v("nuName").value, password: v("nuPw").value, admin: v("nuAdmin").checked, active: true});
+    ROWS = baseRows(); drawMatrix(); amsg("userMsg", `${user} added. Adjust their ticks in the matrix above if needed.`, true);
+    ["nuUser", "nuName", "nuPw"].forEach(id => v(id).value = ""); v("nuAdmin").checked = false;
+  } catch (e) { amsg("userMsg", e.message); }
 };
 
 (async () => {

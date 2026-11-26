@@ -1,7 +1,7 @@
 // Company Master Dashboard server.
 // Serves the sign-in page, public/index.html and /api/data. Data is read from the Company Master Data sheet and
 // the ROC folder with the service-account key kept on this server; the key never reaches the browser.
-// Each user sees only what their role allows (access.js); the server strips everything else before sending.
+// Each user sees only what is ticked for them in the access matrix (access.js); the server strips everything else before sending.
 // Settings and the key are read from .env (see .env.example).
 require("./env.js");
 const http = require("http");
@@ -97,7 +97,7 @@ async function data(refresh) {
 }
 
 
-// The data one user may see: only the sheet tabs, ROC workbooks and document links their role allows.
+// The data one user may see: only the sheet tabs, ROC workbooks and document links they are allowed.
 function forUser(d, perms) {
   const want = new Set(ALWAYS);
   for (const [k, tabs] of Object.entries(TAB_TABLES)) if (perms[k]) tabs.forEach(t => want.add(t));
@@ -143,11 +143,11 @@ const clientIp = req => String(req.headers["x-forwarded-for"] || "").split(",")[
 const isLoopback = req => !req.headers["x-forwarded-for"] && /^(::1|127\.|::ffff:127\.)/.test(req.socket.remoteAddress || "");
 
 function who(req) {
-  if (!access.anyAccounts()) return isLoopback(req) ? {user: "local", name: "Local", role: "admin", owner: true} : null;
+  if (!access.anyAccounts()) return isLoopback(req) ? {user: "local", name: "Local", admin: true, owner: true} : null;
   return access.check(cookieOf(req));
 }
 
-const me = u => ({user: u.user, name: u.name || u.user, role: u.role, roleName: access.roleName(u.role), admin: u.role === "admin", owner: !!u.owner,
+const me = u => ({user: u.user, name: u.name || u.user, admin: !!u.admin, owner: !!u.owner,
   perms: access.permsFor(u), noLogin: !access.anyAccounts()});
 
 const page = name => fs.readFileSync(path.join(__dirname, "public", name));
@@ -191,12 +191,12 @@ http.createServer(async (req, res) => {
     }
 
     if (p.startsWith("/api/admin/")) {
-      if (u.role !== "admin") return json(res, 403, {error: "Admins only"});
+      if (!u.admin) return json(res, 403, {error: "Admins only"});
       if (p === "/api/admin/access" && req.method === "GET") return json(res, 200, access.adminView());
       if (req.method !== "POST") return json(res, 405, {error: "Use POST"});
       const b = await readJson(req);
-      if (p === "/api/admin/roles") access.saveRoles(b.roles);
-      else if (p === "/api/admin/user") access.saveUser(b, u);
+      if (p === "/api/admin/users") access.saveUsers(b.users, u);
+      else if (p === "/api/admin/user") access.addUser(b, u);
       else if (p === "/api/admin/user/delete") access.deleteUser(b.user, u);
       else return json(res, 404, {error: "Not found"});
       return json(res, 200, access.adminView());
