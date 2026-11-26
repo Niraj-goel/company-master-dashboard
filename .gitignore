@@ -3,3 +3,5 @@
 node_modules/
 access.json
 access.json.tmp
+Checklist/people*.csv
+Checklist/temp-passwords*.csv
