@@ -185,6 +185,30 @@ th .arw{color:var(--ochre)}
 
 @media (max-width:700px){.mast,main{padding-left:14px;padding-right:14px}.grid2{grid-template-columns:1fr}.toolbar input[type=search]{min-width:0;width:100%}}
 @media print{.mast label,nav.tabs,.toolbar{display:none}.mast{background:#fff;color:#000}[data-panel]{display:block!important}}
+
+/* Access control: switched-off items stay in the page (the app script binds to them) but are never shown */
+[data-off]{display:none!important}
+body.no-export [data-export],body.no-export .tk [data-a="csv"]{display:none!important}
+.who{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:#DCE8E4}
+.who b{color:#fff;font-weight:600}
+.who .role{border:1px solid rgba(255,255,255,.4);border-radius:10px;padding:0 8px;font-size:12px}
+.who button{background:transparent;border:0;color:#fff;text-decoration:underline;cursor:pointer;padding:0;font-size:13px}
+.amx{border-collapse:collapse;width:100%;min-width:520px}
+.amx th,.amx td{border-bottom:1px solid var(--rule);padding:7px 10px;text-align:left;vertical-align:middle}
+.amx thead th{background:var(--ledger-soft);font-weight:650;white-space:nowrap}
+.amx td.c,.amx th.c{text-align:center}
+.amx tr.grp td{background:var(--paper);font-weight:650;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.amx input[type=checkbox]{width:17px;height:17px;accent-color:var(--ledger);cursor:pointer}
+.amx input[type=checkbox]:disabled{cursor:not-allowed}
+.amx .note{display:block;color:var(--muted);font-size:12px}
+.amx input[type=text],.amx input[type=password],.amx select,.afrm input,.afrm select{padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:var(--sheet);min-width:0}
+.afrm{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.afrm input,.afrm select{flex:1 1 140px}
+.pill{display:inline-block;border-radius:10px;padding:0 8px;font-size:12px;background:var(--ok-soft);color:var(--ok)}
+.pill.off{background:var(--seal-soft);color:var(--seal)}
+.amsg{min-height:1.5em;margin:8px 0 0;font-size:13px}
+.amsg.err{color:var(--seal)}.amsg.ok{color:var(--ok)}
+.btnp{background:var(--ledger)!important;color:var(--paper)!important;border-color:var(--ledger)!important}
 </style>
 </head>
 <body>
@@ -193,31 +217,63 @@ th .arw{color:var(--ochre)}
     <div>
       <h1>Alcove Group – Company Master</h1>
       <p id="srcLine"></p>
+      <div class="who" id="who" hidden></div>
     </div>
     <div class="ctrls" style="display:flex;gap:8px;flex-wrap:wrap">
-    <label class="btn" title="Load one or more MCA master-data workbooks (MasterData, Director Details, IndexOfCharges sheets)">Load MCA data
+    <label class="btn" data-perm="act.mca" data-off title="Load one or more MCA master-data workbooks (MasterData, Director Details, IndexOfCharges sheets)">Load MCA data
       <input type="file" id="mcaIn" accept=".xlsx,.xls" multiple class="hidden"></label>
-    <a class="btn" href="?refresh=1" title="Read the sheet and the ROC folder again now">Refresh data</a>
-    <a class="btn" href="https://docs.google.com/spreadsheets/d/1nK-tKjoSH2Y84YE-0rOIgQgvBA238mCUBp0fK5igdRg/edit" target="_blank" rel="noopener">Open data sheet</a>
-    <a class="btn" href="https://drive.google.com/drive/folders/1MO7nI9kXkk4ji1wcmwXZJGW9O_q0Rwef" target="_blank" rel="noopener">Open Drive folder</a>
+    <a class="btn" data-perm="act.refresh" data-off href="?refresh=1" title="Read the sheet and the ROC folder again now">Refresh data</a>
+    <a class="btn" data-perm="act.links" data-off href="https://docs.google.com/spreadsheets/d/1nK-tKjoSH2Y84YE-0rOIgQgvBA238mCUBp0fK5igdRg/edit" target="_blank" rel="noopener">Open data sheet</a>
+    <a class="btn" data-perm="act.links" data-off href="https://drive.google.com/drive/folders/1MO7nI9kXkk4ji1wcmwXZJGW9O_q0Rwef" target="_blank" rel="noopener">Open Drive folder</a>
     <label class="btn" hidden title="Load a newer version of the Company Master workbook with the same columns">Load updated Company Master
       <input type="file" id="fileIn" accept=".xlsx,.xlsm,.xls,.csv" class="hidden"></label>
     </div>
   </div>
   <nav class="tabs" role="tablist" id="tabs">
     <button role="tab" data-tab="register" aria-selected="true">Entity register</button>
-    <button role="tab" data-tab="dirreg" aria-selected="false">Director register</button>
-    <button role="tab" data-tab="capital" aria-selected="false">Capital</button>
-    <button role="tab" data-tab="fin" aria-selected="false">Group financials</button>
-    <button role="tab" data-tab="loans" aria-selected="false">Inter-group loans</button>
-    <button role="tab" data-tab="xh" aria-selected="false">Cross holding</button>
-    <button role="tab" data-tab="obs" aria-selected="false">Observations<span class="count" id="cntObs">0</span></button>
+    <button role="tab" data-tab="dirreg" data-perm="tab.dirreg" data-off aria-selected="false">Director register</button>
+    <button role="tab" data-tab="capital" data-perm="tab.capital" data-off aria-selected="false">Capital</button>
+    <button role="tab" data-tab="fin" data-perm="tab.fin" data-off aria-selected="false">Group financials</button>
+    <button role="tab" data-tab="loans" data-perm="tab.loans" data-off aria-selected="false">Inter-group loans</button>
+    <button role="tab" data-tab="xh" data-perm="tab.xh" data-off aria-selected="false">Cross holding</button>
+    <button role="tab" data-tab="obs" data-perm="tab.obs" data-off aria-selected="false">Observations<span class="count" id="cntObs">0</span></button>
+    <button role="tab" data-tab="access" data-perm="admin" data-off aria-selected="false">Access</button>
   </nav>
 </header>
 
 <main>
   <div id="banner" class="banner hidden"></div>
   <dl class="ledger" id="ledger"></dl>
+
+  <section data-panel="access" class="hidden">
+    <div class="panel">
+      <h2>Access matrix</h2>
+      <p class="lead">Tick what each role can see and do. The server removes everything a role can’t see before sending the page, so it can’t be read from the browser either. Admin always has full access and is the only role that sees this tab.</p>
+      <div class="tablewrap"><table class="amx" id="amx"></table></div>
+      <div class="afrm" style="margin-top:12px">
+        <input id="newRole" placeholder="New role name, e.g. Accounts" aria-label="New role name" maxlength="40">
+        <button class="lbtn" id="addRole">+ Add role</button>
+        <span class="sp" style="flex:1"></span>
+        <button class="lbtn btnp" id="saveRoles">Save access matrix</button>
+      </div>
+      <p class="amsg" id="roleMsg"></p>
+    </div>
+    <div class="panel">
+      <h2>Users</h2>
+      <p class="lead">Each person signs in with their own user name and password. Switch a user off to block them straight away; their open session ends on their next click. Leave the password blank to keep the current one.</p>
+      <div class="tablewrap"><table class="amx" id="ausers"></table></div>
+      <h3 style="margin:18px 0 8px">Add a user</h3>
+      <div class="afrm">
+        <input id="nuUser" placeholder="User name" aria-label="User name" autocomplete="off">
+        <input id="nuName" placeholder="Full name" aria-label="Full name" autocomplete="off">
+        <select id="nuRole" aria-label="Role"></select>
+        <input id="nuPw" type="password" placeholder="Password (8+ characters)" aria-label="Password" autocomplete="new-password">
+        <button class="lbtn btnp" id="nuAdd">Add user</button>
+      </div>
+      <p class="amsg" id="userMsg"></p>
+      <p class="small" id="accFile"></p>
+    </div>
+  </section>
 
   <section data-panel="register">
     <div class="toolbar">
@@ -228,7 +284,7 @@ th .arw{color:var(--ochre)}
       <select id="fSw" aria-label="Software"></select>
       <select id="fDir" aria-label="Director"></select>
       <span class="sp"></span>
-      <button class="lbtn" id="docBtn">Document links</button>
+      <button class="lbtn" id="docBtn" data-perm="act.doclinks" data-off>Document links</button>
       <button class="lbtn" id="clearF">Clear filters</button>
       <button class="lbtn" data-export="reg">Download CSV</button>
     </div>
@@ -1917,13 +1973,133 @@ function coerceTab(k, rows) {
 }
 function b64bytes(s) { const bin = atob(s); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
 
+/* ---------- Signed-in user and access control ---------- */
+const ME = {perms: {}};
+const can = k => k === "admin" ? !!ME.admin : !!ME.perms[k];
+const escH = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+async function api(url, body) {
+  const res = await fetch(url, body === undefined ? {cache: "no-store"} :
+    {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify(body)});
+  const j = await res.json().catch(() => ({}));
+  if (res.status === 401 && j.signin) { location.reload(); throw new Error("Signed out"); }
+  if (!res.ok) throw new Error(j.error ? `${j.error}${j.hint ? ". " + j.hint : ""}` : `Request failed (${res.status})`);
+  return j;
+}
+function applyAccess() {
+  document.querySelectorAll("[data-perm]").forEach(el => el.toggleAttribute("data-off", !can(el.dataset.perm)));
+  document.body.classList.toggle("no-export", !can("act.export"));
+  const who = document.getElementById("who");
+  const roleName = ME.admin ? "Admin" : ME.roleName || ME.role;
+  who.innerHTML = ME.noLogin ? `<span>No password set: open on this computer only, as admin.</span>`
+    : `<span>Signed in as <b>${escH(ME.name)}</b></span><span class="role">${escH(roleName)}</span>` +
+      (ME.owner ? "" : `<button type="button" id="pwBtn">Change password</button>`) + `<button type="button" id="outBtn">Sign out</button>`;
+  who.hidden = false;
+  const out = document.getElementById("outBtn");
+  if (out) out.onclick = async () => { await fetch("logout", {method: "POST"}); location.reload(); };
+  const pw = document.getElementById("pwBtn");
+  if (pw) pw.onclick = async () => {
+    const current = prompt("Current password"); if (!current) return;
+    const next = prompt("New password (at least 8 characters)"); if (!next) return;
+    if (prompt("Type the new password again") !== next) return alert("The two new passwords don't match.");
+    try { await api("api/password", {current, next}); alert("Password changed."); } catch (e) { alert(e.message); }
+  };
+}
+// Runs after the dashboard script loads: keeps hidden tabs unreachable and drops observations built from withheld data.
+function guardApp() {
+  const orig = window.selectTab;
+  window.selectTab = tab => {
+    const btn = document.querySelector(`#tabs button[data-tab="${tab}"]`);
+    if (btn && btn.hasAttribute("data-off")) tab = "register";
+    orig(tab);
+    if (tab === "access") { document.getElementById("ledger").classList.add("hidden"); renderAccess(); }
+  };
+  if (!can("tab.fin") && !can("tab.loans")) window.finObservations = () => [];
+}
+
+/* ---------- Admin: access matrix and users ---------- */
+let ACC = null;
+const roleOpts = sel => Object.entries(ACC.roles).map(([id, r]) => `<option value="${id}"${id === sel ? " selected" : ""}>${escH(r.name)}</option>`).join("");
+const amsg = (id, text, ok) => { const el = document.getElementById(id); el.textContent = text; el.className = "amsg " + (ok ? "ok" : "err"); };
+async function renderAccess(fresh) {
+  if (!ME.admin) return;
+  try { if (!ACC || fresh) ACC = await api("api/admin/access"); } catch (e) { return amsg("roleMsg", e.message); }
+  drawMatrix(); drawUsers();
+}
+function drawMatrix() {
+  const ids = Object.keys(ACC.roles);
+  let grp = "", html = `<thead><tr><th>What</th>${ids.map(id => `<th class="c">${escH(ACC.roles[id].name)}${id === "admin" || id === "general" ? "" :
+    ` <button class="lbtn" style="padding:0 6px;font-size:12px" data-delrole="${id}" title="Remove this role">×</button>`}</th>`).join("")}</tr></thead><tbody>`;
+  for (const p of ACC.perms) {
+    if (p.group !== grp) { grp = p.group; html += `<tr class="grp"><td colspan="${ids.length + 1}">${escH(grp)}</td></tr>`; }
+    html += `<tr><td>${escH(p.label)}${p.note ? `<span class="note">${escH(p.note)}</span>` : ""}</td>` + ids.map(id => {
+      const on = id === "admin" || p.fixed || !!ACC.roles[id].perms[p.key];
+      return `<td class="c"><input type="checkbox" data-role="${id}" data-key="${p.key}" aria-label="${escH(ACC.roles[id].name)}: ${escH(p.label)}"${on ? " checked" : ""}${id === "admin" || p.fixed ? " disabled" : ""}></td>`;
+    }).join("") + "</tr>";
+  }
+  html += `<tr class="grp"><td colspan="${ids.length + 1}">Administration</td></tr><tr><td>Access tab: users and this matrix</td>${ids.map(id =>
+    `<td class="c"><input type="checkbox" disabled${id === "admin" ? " checked" : ""} aria-label="${escH(ACC.roles[id].name)}: administration"></td>`).join("")}</tr>`;
+  const t = document.getElementById("amx");
+  t.innerHTML = html + "</tbody>";
+  t.querySelectorAll("input[data-key]").forEach(c => c.onchange = () => { ACC.roles[c.dataset.role].perms[c.dataset.key] = c.checked; amsg("roleMsg", "Unsaved changes", false); });
+  t.querySelectorAll("[data-delrole]").forEach(b => b.onclick = () => {
+    const id = b.dataset.delrole;
+    if (ACC.users.some(u => u.role === id)) return amsg("roleMsg", `Move the users in “${ACC.roles[id].name}” to another role first.`);
+    delete ACC.roles[id]; drawMatrix(); drawUsers(); amsg("roleMsg", "Unsaved changes", false);
+  });
+}
+function drawUsers() {
+  document.getElementById("nuRole").innerHTML = roleOpts("general");
+  const rows = ACC.users.map((u, i) => `<tr data-i="${i}">
+    <td><b>${escH(u.user)}</b></td>
+    <td><input type="text" data-f="name" value="${escH(u.name)}" aria-label="Full name of ${escH(u.user)}"></td>
+    <td><select data-f="role" aria-label="Role of ${escH(u.user)}">${roleOpts(u.role)}</select></td>
+    <td class="c"><input type="checkbox" data-f="active"${u.active ? " checked" : ""} aria-label="${escH(u.user)} can sign in"></td>
+    <td><input type="password" data-f="password" placeholder="New password" autocomplete="new-password" aria-label="New password for ${escH(u.user)}"></td>
+    <td style="white-space:nowrap"><button class="lbtn" data-a="save">Save</button> <button class="lbtn" data-a="del">Delete</button></td></tr>`).join("");
+  const owner = ACC.owner ? `<tr><td><b>${escH(ACC.owner)}</b></td><td>Owner (server settings)</td><td>Admin</td><td class="c"><span class="pill">On</span></td><td class="small">Set by DASHBOARD_PASSWORD</td><td></td></tr>` : "";
+  const t = document.getElementById("ausers");
+  t.innerHTML = `<thead><tr><th>User name</th><th>Name</th><th>Role</th><th class="c">Can sign in</th><th>Reset password</th><th></th></tr></thead><tbody>${owner}${rows ||
+    (owner ? "" : `<tr><td colspan="6" class="small">No users yet.</td></tr>`)}</tbody>`;
+  t.querySelectorAll("tr[data-i]").forEach(tr => {
+    const u = ACC.users[+tr.dataset.i], f = k => tr.querySelector(`[data-f="${k}"]`);
+    tr.querySelector('[data-a="save"]').onclick = () => saveUser({user: u.user, name: f("name").value, role: f("role").value, active: f("active").checked, password: f("password").value});
+    tr.querySelector('[data-a="del"]').onclick = async () => {
+      if (!confirm(`Delete ${u.user}? They will no longer be able to sign in.`)) return;
+      try { ACC = await api("api/admin/user/delete", {user: u.user}); drawUsers(); amsg("userMsg", `${u.user} deleted.`, true); } catch (e) { amsg("userMsg", e.message); }
+    };
+  });
+  document.getElementById("accFile").textContent = ACC.persistentWarning
+    ? `Warning: users are saved in ${ACC.file}, which this host wipes on every restart. Set ACCESS_FILE to a file on a persistent disk.` : "";
+}
+async function saveUser(b, clear) {
+  try {
+    ACC = await api("api/admin/user", b);
+    drawUsers(); amsg("userMsg", `${b.user} saved.`, true);
+    if (clear) ["nuUser", "nuName", "nuPw"].forEach(id => document.getElementById(id).value = "");
+  } catch (e) { amsg("userMsg", e.message); }
+}
+document.getElementById("nuAdd").onclick = () => saveUser({user: document.getElementById("nuUser").value.trim(), name: document.getElementById("nuName").value,
+  role: document.getElementById("nuRole").value, active: true, password: document.getElementById("nuPw").value}, true);
+document.getElementById("addRole").onclick = () => {
+  const name = document.getElementById("newRole").value.trim(); if (!name) return;
+  let id = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "role";
+  if (id.length < 2) id += "-role";
+  while (ACC.roles[id]) id += "-2";
+  ACC.roles[id] = {name, perms: {}}; document.getElementById("newRole").value = "";
+  drawMatrix(); drawUsers(); amsg("roleMsg", `“${name}” added. Tick its access, then save.`, false);
+};
+document.getElementById("saveRoles").onclick = async () => {
+  try { ACC = await api("api/admin/roles", {roles: ACC.roles}); drawMatrix(); drawUsers(); amsg("roleMsg", "Access matrix saved. It applies on each user's next page load.", true); }
+  catch (e) { amsg("roleMsg", e.message); }
+};
+
 (async () => {
+  try { Object.assign(ME, await api("api/me")); } catch (e) { liveBanner(`Could not check your sign-in: ${e.message}`, true); return; }
+  applyAccess();
   liveBanner("Loading live data from Google Drive…");
   let d;
   try {
-    const res = await fetch("api/data" + (location.search.includes("refresh") ? "?refresh=1" : ""), {cache: "no-store"});
-    d = await res.json();
-    if (!res.ok) throw new Error(`${d.error}${d.hint ? ". " + d.hint : ""}`);
+    d = await api("api/data" + (location.search.includes("refresh") && can("act.refresh") ? "?refresh=1" : ""));
   } catch (e) {
     liveBanner(location.protocol === "file:"
       ? "Open this dashboard through its server (run start.bat, then go to http://localhost:3000). Opened as a file, it cannot read Google Drive."
@@ -1932,7 +2108,8 @@ function b64bytes(s) { const bin = atob(s); const a = new Uint8Array(bin.length)
   }
   const T = {};
   for (const k of Object.keys(SCHEMA)) T[k] = coerceTab(k, d.tables[SCHEMA[k].title] || []);
-  const missing = Object.keys(SCHEMA).filter(k => !(d.tables[SCHEMA[k].title] || []).length).map(k => SCHEMA[k].title);
+  const withheld = new Set(d.withheld || []);
+  const missing = Object.keys(SCHEMA).map(k => SCHEMA[k].title).filter(t => !withheld.has(t) && !(d.tables[t] || []).length);
   if (missing.includes("Entities")) { liveBanner("The Entities tab of the Company Master Data sheet is empty or missing.", true); return; }
   window.__SEED = fromTables(T, SCHEMA);
   window.__DOCS = d.docs || {};
@@ -1940,6 +2117,7 @@ function b64bytes(s) { const bin = atob(s); const a = new Uint8Array(bin.length)
   const app = document.createElement("script");
   app.textContent = document.getElementById("app").textContent;
   document.body.appendChild(app);
+  guardApp();
 
   const ok = [], bad = [...(d.roc.errors || [])];
   for (const f of d.roc.files || []) {
@@ -1949,7 +2127,7 @@ function b64bytes(s) { const bin = atob(s); const a = new Uint8Array(bin.length)
   if (ok.length) { buildFilters(); renderAll(); }
   const parts = [`Live data read ${window.__LIVE_AT.toLocaleString("en-IN", {dateStyle: "medium", timeStyle: "short"})}.`];
   if (missing.length) parts.push(`Empty tabs: ${missing.join(", ")}.`);
-  parts.push(ok.length ? `MCA details from ${ok.length} of ${d.roc.total} ROC files.` : "MCA details from the sheet's MCA tabs (ROC folder not read).");
+  if (!d.roc.withheld) parts.push(ok.length ? `MCA details from ${ok.length} of ${d.roc.total} ROC files.` : "MCA details from the sheet's MCA tabs (ROC folder not read).");
   if (bad.length) parts.push(`Not read: ${bad.join("; ")}.`);
   liveBanner(parts.join(" "), missing.length > 0 || (d.roc.failed && !ok.length));
 })();

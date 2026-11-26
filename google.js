@@ -57,7 +57,7 @@ async function api(url, {raw = false} = {}) {
   const res = await fetch(url, {headers: {authorization: `Bearer ${await accessToken()}`}});
   if (!res.ok) {
     let msg = res.statusText; try { const j = await res.json(); msg = (j.error && j.error.message) || msg; } catch {}
-    const e = new Error(`${res.status} ${msg}`); e.status = res.status; throw e;
+    const e = new Error(`${res.status} ${msg}`); e.status = res.status; e.google = true; throw e;
   }
   return raw ? Buffer.from(await res.arrayBuffer()) : res.json();
 }

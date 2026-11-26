@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Company Master – Sign in</title>
+<style>
+:root{--paper:#F5F7F6;--sheet:#FFFFFF;--ink:#1B2422;--muted:#5D6B67;--rule:#D5DDDA;--ledger:#16483F;--seal:#A8261D;--seal-soft:#F8E3E0;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--paper:#111816;--sheet:#18211F;--ink:#E4ECE9;--muted:#9AABA6;--rule:#2C3936;--ledger:#7CC4B2;--seal:#F08A80;--seal-soft:#3D1F1C;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font:14px/1.5 "Segoe UI","Public Sans",system-ui,-apple-system,Roboto,Arial,sans-serif}
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:16px}
+form{width:100%;max-width:360px;background:var(--sheet);border:1px solid var(--rule);border-top:4px solid var(--ledger);border-radius:4px;padding:28px 26px}
+h1{margin:0 0 2px;font-size:20px}
+p{margin:0 0 22px;color:var(--muted)}
+label{display:block;font-weight:600;margin:0 0 14px}
+input{display:block;width:100%;margin-top:5px;padding:9px 10px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:inherit;font:inherit}
+input:focus-visible,button:focus-visible{outline:2px solid var(--ledger);outline-offset:2px}
+button{width:100%;margin-top:6px;padding:10px;border:0;border-radius:4px;background:var(--ledger);color:var(--paper);font:inherit;font-weight:600;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+.err{display:none;margin:0 0 14px;padding:8px 10px;border-radius:4px;background:var(--seal-soft);color:var(--seal);border:1px solid var(--seal)}
+</style>
+</head>
+<body>
+<form id="f" autocomplete="on">
+  <h1>Alcove Group – Company Master</h1>
+  <p>Sign in to continue</p>
+  <div class="err" id="err" role="alert"></div>
+  <label>User name<input name="user" id="user" autocomplete="username" required autofocus></label>
+  <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+  <button id="go">Sign in</button>
+</form>
+<script>
+document.getElementById("f").onsubmit = async ev => {
+  ev.preventDefault();
+  const f = ev.target, err = document.getElementById("err"), go = document.getElementById("go");
+  go.disabled = true; err.style.display = "none";
+  try {
+    const res = await fetch("login", {method: "POST", headers: {"content-type": "application/json"},
+      body: JSON.stringify({user: f.user.value, password: f.password.value})});
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(j.error || `Sign-in failed (${res.status})`);
+    location.reload();
+  } catch (e) {
+    err.textContent = e.message; err.style.display = "block"; f.password.value = ""; f.password.focus();
+  } finally { go.disabled = false; }
+};
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 // Company Master Dashboard server.
-// Serves public/index.html and /api/data, which reads the Company Master Data sheet and the ROC folder
-// with the service-account key kept on this server. The key never reaches the browser.
+// Serves the sign-in page, public/index.html and /api/data. Data is read from the Company Master Data sheet and
+// the ROC folder with the service-account key kept on this server; the key never reaches the browser.
+// Each user sees only what their role allows (access.js); the server strips everything else before sending.
 // Settings and the key are read from .env (see .env.example).
 require("./env.js");
 const http = require("http");
@@ -8,6 +9,7 @@ const fs = require("fs");
 const path = require("path");
 const g = require("./google.js");
 const {findDocuments} = require("./docs.js");
+const access = require("./access.js");
 
 const CONFIG = {
   port: +process.env.PORT || 3000,
@@ -18,9 +20,19 @@ const CONFIG = {
   tabs: ["Entities", "Share count", "Shareholders", "Shareholding", "Cross holdings", "Financials",
     "Borrowings by lender", "Loans given", "FS holders", "MCA master", "MCA directors", "MCA charges"],
   cacheMs: 2 * 60 * 1000,                     // reuse a read for 2 minutes unless ?refresh=1
-  user: process.env.DASHBOARD_USER || "alcove",
-  password: process.env.DASHBOARD_PASSWORD || "", // set this before sharing the server with anyone
 };
+
+// Which sheet tabs each access-matrix switch needs. A tab is sent only if one of the user's switches needs it.
+const ALWAYS = ["Entities", "MCA master", "MCA charges", "Financials"];
+const TAB_TABLES = {
+  "tab.dirreg": ["MCA directors"],
+  "tab.capital": ["Share count", "Shareholders", "Shareholding", "FS holders"],
+  "tab.fin": ["Borrowings by lender", "Loans given", "FS holders"],
+  "tab.loans": ["Borrowings by lender", "Loans given", "FS holders"],
+  "tab.xh": ["Cross holdings", "Shareholding", "Shareholders", "Share count"],
+};
+// Without Group financials or Inter-group loans, Financials keeps only these columns (used by the register and capital).
+const FIN_LIGHT = ["Company", "Kind", "Unit", "Face value (₹)", "Preference capital", "Directors / partners (FS)"];
 
 let cache = null, cacheAt = 0, inflight = null;
 const rocBytes = new Map();                    // fileId -> {modifiedTime, b64}
@@ -66,10 +78,10 @@ async function readAll() {
 }
 
 // Streams one matched document (PAN card, GST certificate or ROC file) as a download.
-async function sendDoc(res, id) {
+async function sendDoc(res, id, perms) {
   if (!allowedDocs.size) await data(false);
   const f = allowedDocs.get(id);
-  if (!f) return send(res, 404, "text/plain", "Document not found. Refresh the dashboard and try again.");
+  if (!f || !perms["doc." + f.kind]) return send(res, 404, "text/plain", "Document not found. Refresh the dashboard and try again.");
   const bytes = await g.download(id);
   const ascii = f.name.replace(/[^\x20-\x7e]/g, "_").replace(/"/g, "'");
   res.writeHead(200, {"content-type": f.mimeType || "application/octet-stream", "content-length": bytes.length,
@@ -84,39 +96,122 @@ async function data(refresh) {
   return inflight;
 }
 
-function authorised(req) {
-  if (!CONFIG.password) return true;
-  const m = /^Basic (.+)$/.exec(req.headers.authorization || "");
-  if (!m) return false;
-  const [u, ...p] = Buffer.from(m[1], "base64").toString().split(":");
-  return u === CONFIG.user && p.join(":") === CONFIG.password;
+
+// The data one user may see: only the sheet tabs, ROC workbooks and document links their role allows.
+function forUser(d, perms) {
+  const want = new Set(ALWAYS);
+  for (const [k, tabs] of Object.entries(TAB_TABLES)) if (perms[k]) tabs.forEach(t => want.add(t));
+  const tables = {};
+  for (const [t, rows] of Object.entries(d.tables)) if (want.has(t)) tables[t] = rows;
+  if (!perms["tab.fin"] && !perms["tab.loans"] && tables.Financials && tables.Financials.length) {
+    const head = tables.Financials[0].map(String), keep = FIN_LIGHT.map(h => head.indexOf(h)).filter(i => i >= 0);
+    tables.Financials = tables.Financials.map(r => keep.map(i => r[i] ?? ""));
+  }
+  const docs = {};
+  for (const [name, kinds] of Object.entries(d.docs || {})) {
+    const k = Object.fromEntries(Object.entries(kinds).filter(([kind]) => perms["doc." + kind]));
+    if (Object.keys(k).length) docs[name] = k;
+  }
+  const roc = perms["tab.dirreg"] ? d.roc : {files: [], errors: [], total: 0, withheld: true};
+  return {readAt: d.readAt, tables, roc, docs, docsError: d.docsError, withheld: CONFIG.tabs.filter(t => !want.has(t))};
 }
 
-const send = (res, code, type, body) => {
-  res.writeHead(code, {"content-type": type, "cache-control": "no-store", "x-content-type-options": "nosniff"});
+const send = (res, code, type, body, extra = {}) => {
+  res.writeHead(code, {"content-type": type, "cache-control": "no-store", "x-content-type-options": "nosniff",
+    "referrer-policy": "no-referrer", "x-frame-options": "SAMEORIGIN", ...extra});
   res.end(body);
 };
+const json = (res, code, obj, extra) => send(res, code, "application/json; charset=utf-8", JSON.stringify(obj), extra);
+
+function readJson(req) {
+  return new Promise((resolve, reject) => {
+    if (!/^application\/json/.test(req.headers["content-type"] || ""))   // other sites' forms can't send JSON, so this blocks CSRF
+      return reject(Object.assign(new Error("Expected JSON"), {status: 415}));
+    let body = "";
+    req.on("data", c => { body += c; if (body.length > 200_000) { reject(Object.assign(new Error("Too large"), {status: 413})); req.destroy(); } });
+    req.on("end", () => { try { resolve(JSON.parse(body || "{}")); } catch { reject(Object.assign(new Error("Bad JSON"), {status: 400})); } });
+    req.on("error", reject);
+  });
+}
+
+const cookieOf = req => (/(?:^|;\s*)cm_session=([^;]+)/.exec(req.headers.cookie || "") || [])[1];
+const isHttps = req => req.socket.encrypted || /^https/i.test(req.headers["x-forwarded-proto"] || "");
+// No Path attribute: the browser scopes the cookie to this app's folder, which also works behind a /p/... proxy prefix.
+const setCookie = (req, value, maxAge) =>
+  `cm_session=${value}; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${isHttps(req) ? "; Secure" : ""}`;
+const clientIp = req => String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket.remoteAddress || "";
+const isLoopback = req => !req.headers["x-forwarded-for"] && /^(::1|127\.|::ffff:127\.)/.test(req.socket.remoteAddress || "");
+
+function who(req) {
+  if (!access.anyAccounts()) return isLoopback(req) ? {user: "local", name: "Local", role: "admin", owner: true} : null;
+  return access.check(cookieOf(req));
+}
+
+const me = u => ({user: u.user, name: u.name || u.user, role: u.role, roleName: access.roleName(u.role), admin: u.role === "admin", owner: !!u.owner,
+  perms: access.permsFor(u), noLogin: !access.anyAccounts()});
+
+const page = name => fs.readFileSync(path.join(__dirname, "public", name));
 
 http.createServer(async (req, res) => {
-  if (!authorised(req)) { res.writeHead(401, {"www-authenticate": 'Basic realm="Company Master"'}); return res.end("Sign in required"); }
-  const url = new URL(req.url, "http://x");
+  const p = new URL(req.url, "http://x").pathname, q = new URL(req.url, "http://x").searchParams;
   try {
-    if (url.pathname === "/" || url.pathname === "/index.html")
-      return send(res, 200, "text/html; charset=utf-8", fs.readFileSync(path.join(__dirname, "public", "index.html")));
-    if (url.pathname === "/api/data")
-      return send(res, 200, "application/json", JSON.stringify(await data(url.searchParams.has("refresh"))));
-    const doc = /^\/api\/doc\/([A-Za-z0-9_-]{10,})$/.exec(url.pathname);
-    if (doc) return await sendDoc(res, doc[1]);
+    if (p === "/healthz") return send(res, 200, "text/plain", "ok");
+
+    if (p === "/login" && req.method === "POST") {
+      const b = await readJson(req);
+      const keys = [`u:${String(b.user || "").trim().toLowerCase()}`, `ip:${clientIp(req)}`];
+      if (access.throttled(keys)) return json(res, 429, {error: "Too many attempts. Try again in 15 minutes."});
+      const u = access.verify(b.user, b.password);
+      if (!u) { access.failed(keys); return json(res, 401, {error: "Wrong user name or password"}); }
+      access.cleared(keys);
+      return json(res, 200, {ok: true}, {"set-cookie": setCookie(req, access.issue(u), access.SESSION_HOURS * 3600)});
+    }
+    if (p === "/logout" && req.method === "POST")
+      return json(res, 200, {ok: true}, {"set-cookie": setCookie(req, "", 0)});
+
+    const u = who(req);
+    if (!u) {
+      if (!access.anyAccounts())
+        return send(res, 503, "text/plain", "Set DASHBOARD_PASSWORD in the server settings (environment or .env) and restart, then sign in with DASHBOARD_USER and that password.");
+      if (p === "/" || p === "/index.html") return send(res, 200, "text/html; charset=utf-8", page("login.html"));
+      return json(res, 401, {error: "Sign in required", signin: true});
+    }
+    const perms = access.permsFor(u);
+
+    if (p === "/" || p === "/index.html") return send(res, 200, "text/html; charset=utf-8", page("index.html"));
+    if (p === "/api/me") return json(res, 200, me(u));
+    if (p === "/api/data") return json(res, 200, forUser(await data(q.has("refresh") && perms["act.refresh"]), perms));
+    const doc = /^\/api\/doc\/([A-Za-z0-9_-]{10,})$/.exec(p);
+    if (doc) return await sendDoc(res, doc[1], perms);
+
+    if (p === "/api/password" && req.method === "POST") {
+      const b = await readJson(req);
+      const fresh = access.changeOwnPassword(u, b.current, b.next);
+      return json(res, 200, {ok: true}, {"set-cookie": setCookie(req, access.issue(fresh), access.SESSION_HOURS * 3600)});
+    }
+
+    if (p.startsWith("/api/admin/")) {
+      if (u.role !== "admin") return json(res, 403, {error: "Admins only"});
+      if (p === "/api/admin/access" && req.method === "GET") return json(res, 200, access.adminView());
+      if (req.method !== "POST") return json(res, 405, {error: "Use POST"});
+      const b = await readJson(req);
+      if (p === "/api/admin/roles") access.saveRoles(b.roles);
+      else if (p === "/api/admin/user") access.saveUser(b, u);
+      else if (p === "/api/admin/user/delete") access.deleteUser(b.user, u);
+      else return json(res, 404, {error: "Not found"});
+      return json(res, 200, access.adminView());
+    }
     send(res, 404, "text/plain", "Not found");
   } catch (e) {
+    if (e.status && e.status < 500 && !e.google) return json(res, e.status, {error: e.message});
     const hint = e.status === 403 && /has not been used|disabled/.test(e.message)
       ? "Enable the Google Sheets API and Google Drive API for the service account's Cloud project."
       : e.status === 403 || e.status === 404
         ? `Share the Company Master Data sheet and the Drive folder with ${g.clientEmail()} (Viewer).`
         : "";
-    send(res, 502, "application/json", JSON.stringify({error: e.message, hint}));
+    json(res, 502, {error: e.message, hint});
   }
 }).listen(CONFIG.port, () => {
   console.log(`Company Master Dashboard: http://localhost:${CONFIG.port}`);
-  if (!CONFIG.password) console.log("No DASHBOARD_PASSWORD set: anyone who can reach this port can see the data.");
+  if (!access.anyAccounts()) console.log("No DASHBOARD_PASSWORD set: only this computer (localhost) can open the dashboard, as admin.");
 });

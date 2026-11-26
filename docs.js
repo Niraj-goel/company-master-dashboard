@@ -55,7 +55,7 @@ async function findDocuments(entities, folders) {
       pan: pick(pan.filter(f => !/\.xlsx?$/i.test(f.name)), e, ["pdf", "jpg", "jpeg", "png"]),
       gst: pick(gst, e, ["pdf", "jpg", "jpeg", "png"]),
     };
-    for (const k in d) if (d[k]) allowed.set(d[k].id, d[k]); else delete d[k];
+    for (const k in d) if (d[k]) allowed.set(d[k].id, {...d[k], kind: k}); else delete d[k];
     docs[String(e.name).trim()] = d;
   }
   return {docs, allowed};

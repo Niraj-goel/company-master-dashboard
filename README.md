@@ -9,6 +9,19 @@ Double-click `start.bat`, or run `node server.js`. It opens http://localhost:300
 - **Refresh data** re-reads Google straight away. Otherwise the server reuses a read for 2 minutes.
 - To change the data, edit the Google Sheet or add files to the ROC folder, then refresh the page.
 
+## Sign-in, roles and the access matrix
+
+Everyone signs in on the dashboard's own sign-in page with a personal user name and password.
+
+- **Owner**: the `DASHBOARD_USER` / `DASHBOARD_PASSWORD` account from `.env`. Always an admin, and can't be deleted from the page, so you can't lock yourself out.
+- **Admin**: sees everything, plus the **Access** tab. There it adds users, sets their role, resets passwords, switches people off, and edits the access matrix.
+- **General**: the standard staff view. By default it gets Entity register, Director register, Capital, Observations, document downloads and CSV export. It does not get Group financials, Inter-group loans, Cross holding, Refresh, the sheet and Drive links, or the local-file tools. Change any of this in the matrix.
+- **More roles** (for example Accounts) can be added from the Access tab, each with its own column in the matrix.
+
+The server applies the matrix before it sends anything. Sheet tabs, ROC workbooks and document links that a role can't see are left out of the data, so they can't be read from the browser's developer tools either. A switched-off user is signed out on their next click. Changing a password ends that user's other sessions. Five wrong passwords lock that user name for 15 minutes.
+
+Users and the matrix are saved in `access.json` (passwords only as scrypt hashes). The file is in `.gitignore`; never commit it. On a host that wipes its disk on restart, set `ACCESS_FILE` to a path on a persistent disk.
+
 ## Document downloads
 
 In the entity register, a CIN, PAN or GSTIN with a ↓ next to it downloads that entity's document from Drive:
@@ -34,7 +47,9 @@ All settings, including the key, are in `.env` in this folder. `.env.example` sh
 | Setting | Use |
 |---|---|
 | `PORT` | Port to listen on (default 3000) |
-| `DASHBOARD_USER`, `DASHBOARD_PASSWORD` | Sign-in prompt. Set a password before anyone else can reach the server |
+| `DASHBOARD_USER`, `DASHBOARD_PASSWORD` | Owner (admin) account. Without a password the dashboard opens only on localhost |
+| `ACCESS_FILE` | Where users, roles and the access matrix are saved (default `access.json`) |
+| `SESSION_HOURS`, `SESSION_SECRET` | How long a sign-in lasts (default 12 h); optional fixed cookie-signing secret |
 | `SHEET_ID`, `ROC_FOLDER_ID` | The Google Sheet and the ROC folder the dashboard reads |
 | `PAN_FOLDER_ID`, `GST_FOLDER_ID` | Folders searched for PAN cards and GST certificates (GST includes its subfolders) |
 | `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `GOOGLE_PRIVATE_KEY_ID`, `GOOGLE_PROJECT_ID`, `GOOGLE_TOKEN_URI` | The service-account key. Keep `GOOGLE_PRIVATE_KEY` in double quotes, with `\n` for line breaks |
@@ -45,7 +60,9 @@ Values set in the real environment override `.env`, so on a hosting service you 
 
 | File | What it is |
 |---|---|
-| `server.js` | Web server: `/` serves the page, `/api/data` returns the sheet tabs and ROC workbooks |
+| `server.js` | Web server: sign-in, `/` serves the page, `/api/data` returns what the user's role may see |
+| `access.js` | Users, roles, access matrix and sign-in sessions |
+| `public/login.html` | Sign-in page |
 | `google.js` | Google sign-in with the service account, plus Sheets and Drive calls |
 | `docs.js` | Matches PAN cards, GST certificates and ROC files to entities |
 | `env.js` | Reads `.env` |
@@ -55,4 +72,4 @@ Values set in the real environment override `.env`, so on a hosting service you 
 
 ## Hosting it for the team
 
-Any Node host works: an office PC or server on the network, Google Cloud Run, Render or Railway. Set `DASHBOARD_PASSWORD`, enter the `.env` values in the host's environment settings, and use the host's HTTPS address.
+Any Node host works: an office PC or server on the network, Google Cloud Run, Render or Railway. Set `DASHBOARD_PASSWORD` (and `ACCESS_FILE` on a persistent disk), enter the `.env` values in the host's environment settings, and use the host's HTTPS address.
