@@ -11,6 +11,7 @@ const crypto = require("crypto");
 // Every column of the access matrix. "fixed" items are on for everyone. "short" is the column heading.
 const PERMS = [
   {key: "tab.register", group: "Tabs", label: "Entity register", short: "Entity register", fixed: true},
+  {key: "tab.mgmt", group: "Tabs", label: "Management dashboard", short: "Mgmt dashboard", note: "Companies on Highrise"},
   {key: "tab.dirreg", group: "Tabs", label: "Director register", short: "Director register", note: "Also loads the ROC workbooks and MCA director lists"},
   {key: "tab.capital", group: "Tabs", label: "Capital", short: "Capital", note: "Share count, shareholders and shareholding"},
   {key: "tab.fin", group: "Tabs", label: "Group financials", short: "Group financials", note: "Financial statement figures and borrowings"},

@@ -184,7 +184,9 @@ th .arw{color:var(--ochre)}
 .subnav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ledger);font-weight:650}
 
 @media (max-width:700px){.mast,main{padding-left:14px;padding-right:14px}.grid2{grid-template-columns:1fr}.toolbar input[type=search]{min-width:0;width:100%}}
-@media print{.mast label,nav.tabs,.toolbar{display:none}.mast{background:#fff;color:#000}[data-panel]{display:block!important}}
+@media print{.mast label,nav.tabs,.toolbar{display:none}.mast{background:#fff;color:#000}[data-panel]{display:block!important}
+  body.print-mgmt [data-panel]:not([data-panel="mgmt"]),body.print-mgmt #ledger{display:none!important}
+  body.print-mgmt #tMg thead{display:table-header-group}body.print-mgmt .ctrls,body.print-mgmt #who,body.print-mgmt #srcLine,body.print-mgmt #banner{display:none!important}body.print-mgmt .mast h1{color:#000}body.print-mgmt main{background:#fff}body.print-mgmt #mgStamp{display:block!important}body.print-mgmt #tMg th{cursor:default}body.print-mgmt #tMg tr{break-inside:avoid}}
 
 /* Access control: switched-off items stay in the page (the app script binds to them) but are never shown */
 [data-off]{display:none!important}
@@ -240,6 +242,7 @@ body.no-export [data-export],body.no-export .tk [data-a="csv"]{display:none!impo
   </div>
   <nav class="tabs" role="tablist" id="tabs">
     <button role="tab" data-tab="register" aria-selected="true">Entity register</button>
+    <button role="tab" data-tab="mgmt" data-perm="tab.mgmt" data-off aria-selected="false">Management dashboard</button>
     <button role="tab" data-tab="dirreg" data-perm="tab.dirreg" data-off aria-selected="false">Director register</button>
     <button role="tab" data-tab="capital" data-perm="tab.capital" data-off aria-selected="false">Capital</button>
     <button role="tab" data-tab="fin" data-perm="tab.fin" data-off aria-selected="false">Group financials</button>
@@ -458,6 +461,22 @@ body.no-export [data-export],body.no-export .tk [data-a="csv"]{display:none!impo
       <div class="tablewrap"><table id="tXO"></table></div>
     </div>
     </div>
+  </section>
+
+  <section data-panel="mgmt" class="hidden">
+    <div class="panel">
+      <h2>Management dashboard</h2>
+      <p class="lead">Companies whose accounting software is Highrise (Kanix- Highrise), taken live from the Entities sheet.</p>
+    </div>
+    <div class="toolbar">
+      <input type="search" id="mgQ" placeholder="Search company" aria-label="Search company">
+      <span class="sp"></span>
+      <button class="lbtn" data-export="mgmt">Download CSV</button>
+      <button class="lbtn" id="mgPrint">Print</button>
+    </div>
+    <p class="small" id="mgStamp" style="display:none"></p>
+    <p class="small" id="mgCount"></p>
+    <div class="tablewrap"><table id="tMg"></table></div>
   </section>
 
   <section data-panel="obs" class="hidden">
@@ -739,6 +758,21 @@ function renderCapital(){
   t._rows = rows; t._rt = rt;
 }
 
+/* ================= Management dashboard: companies on Highrise ================= */
+let sortMg = {k:"sr", d:1};
+function renderMgmt(){
+  const q = norm($("#mgQ").value || "");
+  const all = E.filter(e => /highs*rise/i.test(e.sw || ""));
+  const key = sortMg.k === "name" ? (e => e.name.toLowerCase()) : (e => +e.sr || 0);
+  const rows = all.filter(e => !q || norm(e.name).includes(q)).sort((a, b) => { const x = key(a), y = key(b); return (x > y ? 1 : x < y ? -1 : 0) * sortMg.d; });
+  $("#mgCount").textContent = `${rows.length} of ${all.length} companies on Highrise.`;
+  const th = (k, h) => `<th data-k="${k}">${h}${sortMg.k === k ? (sortMg.d > 0 ? " ▲" : " ▼") : ""}</th>`;
+  const t = $("#tMg");
+  t.innerHTML = `<thead><tr>${th("sr", "Sr")}${th("name", "Name of company")}</tr></thead><tbody>` +
+    (rows.map((e, i) => `<tr><td>${i + 1}</td><td class="name">${esc(e.name)}</td></tr>`).join("") || `<tr><td colspan="2" class="small">No company matches.</td></tr>`) + `</tbody>`;
+  t.querySelectorAll("th").forEach(h => h.onclick = () => { sortMg = {k:h.dataset.k, d: sortMg.k === h.dataset.k ? -sortMg.d : 1}; renderMgmt(); });
+  t._rows = rows;
+}
 function renderObs(){
   $("#checks").innerHTML = Object.entries(CHECK_LABEL).map(([k, l]) => { const fail = E.filter(e => !e.checks[k]).length;
     return `<li><span>${l}</span><b class="${fail ? "bad" : "ok"}">${fail ? `${fail} failed` : `${E.length} passed`}</b></li>`; }).join("");
@@ -748,7 +782,7 @@ function renderObs(){
     (rows.map(o => `<tr><td><span class="sev ${o.sev}">${o.sev}</span></td><td class="name">${esc(o.entity)}</td><td>${esc(o.obs)}</td><td>${esc(o.action)}</td></tr>`).join("") || `<tr><td colspan="4" class="small">No observations at this severity.</td></tr>`) + `</tbody>`;
   t._rows = rows;
 }
-function renderAll(){ finRowsCache = null; renderLedger(); renderOverview(); renderRegister(); renderCapital(); renderLoans(); renderFinLedger(); renderMix(); renderFin(); renderLenderAgg(); OBS = observations(E).concat(finObservations(), mcaObservations()).sort((a, b) => ({High:0,Medium:1,Low:2})[a.sev] - ({High:0,Medium:1,Low:2})[b.sev]); renderLedger(); renderObs(); renderXh(); renderDirReg(); }
+function renderAll(){ finRowsCache = null; renderLedger(); renderOverview(); renderRegister(); renderCapital(); renderLoans(); renderFinLedger(); renderMix(); renderFin(); renderLenderAgg(); OBS = observations(E).concat(finObservations(), mcaObservations()).sort((a, b) => ({High:0,Medium:1,Low:2})[a.sev] - ({High:0,Medium:1,Low:2})[b.sev]); renderLedger(); renderObs(); renderXh(); renderDirReg(); renderMgmt(); }
 
 /* ================= Group financials ================= */
 const lsGet = (k, d) => { try { const v = localStorage.getItem("cmdash2:" + k); return v ? JSON.parse(v) : d; } catch { return d; } };
@@ -1773,12 +1807,14 @@ function tkInit(){
 function selectTab(tab){
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
   document.querySelectorAll("[data-panel]").forEach(p => p.classList.toggle("hidden", p.dataset.panel !== tab));
-  $("#ledger").classList.toggle("hidden", ["dirreg", "fin", "loans", "xh"].includes(tab));   // master summary strip not shown on these tabs
+  $("#ledger").classList.toggle("hidden", ["dirreg", "fin", "loans", "xh", "mgmt"].includes(tab));   // master summary strip not shown on these tabs
 }
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => selectTab(b.dataset.tab));
 [["#q","q"],["#fCon","con"],["#fProj","proj"],["#fGst","gst"],["#fSw","sw"],["#fDir","dir"]].forEach(([s, k]) => $(s).addEventListener("input", e => { F[k] = e.target.value; renderRegister(); }));
 $("#clearF").onclick = () => goRegister({});
-$("#fCap").oninput = renderCapital; $("#fKind").oninput = e => { finKind = e.target.value; renderFin(); }; $("#fSev").oninput = renderObs;
+$("#fCap").oninput = renderCapital; $("#fKind").oninput = e => { finKind = e.target.value; renderFin(); }; $("#fSev").oninput = renderObs; $("#mgQ").oninput = renderMgmt;
+$("#mgPrint").onclick = () => { $("#mgStamp").textContent = `Management dashboard – printed ${new Date().toLocaleString("en-IN", {dateStyle:"medium", timeStyle:"short"})}`; document.body.classList.add("print-mgmt"); window.print(); };
+window.addEventListener("afterprint", () => document.body.classList.remove("print-mgmt"));
 
 function csvDownload(name, header, rows){
   const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -1800,6 +1836,7 @@ document.querySelectorAll("[data-export]").forEach(b => b.onclick = () => {
     existingLoans().map(r => [r.lender, r.borrower, r.amt.toFixed(2), r.route, r.dd ? "Yes" : r.dd === false ? "No" : "To assess", ...CMP_FIELDS.map(([k]) => reqFields(r).some(([q]) => q === k) ? ((CMP[r.id] || {})[k]) || "Pending" : "Not required"), "", ""]));
   if (w === "dir") csvDownload("Director_Register", ["Sr","Name","DIN / DPIN","PAN","PAN check","Date of birth","Age","Aadhaar (masked)","Positions","Company directorships","Entities and designation"],
     drPeople().map((p, i) => { const inf = drInfo(p); return [i + 1, p.name, p.din, inf.pan, drPanCheck(inf.pan, p.name).txt, inf.dob ? inf.dob.split("-").reverse().join("-") : "", drAge(inf.dob), drMask(inf.aad), p.roles.length, drCo(p), p.roles.map(r => `${r.entity} – ${r.desig}`).join("; ")]; }));
+  if (w === "mgmt") csvDownload("Management_Dashboard_Highrise_Companies", ["Sr","Name of company"], $("#tMg")._rows.map((e, i) => [i + 1, e.name]));
   if (w === "obs") csvDownload("Company_Master_Observations", ["Severity","Entity","Observation","Recommended action","Action owner","Target date","Status"], $("#tObs")._rows.map(o => [o.sev, o.entity, o.obs, o.action, "", "", "Open"]));
 });
 
