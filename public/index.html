@@ -223,6 +223,20 @@ table.cmp tfoot td{border-top:2px solid var(--rule);background:var(--paper)}
 
 #lastUpd details.lu{display:inline}#lastUpd details.lu summary{display:inline;cursor:pointer;text-decoration:underline}
 #lastUpd details.lu[open] ul{margin:6px 0 0;padding-left:18px;max-height:220px;overflow:auto}#lastUpd details.lu li span{opacity:.75;margin-right:6px}
+/* Management dashboard: MIS */
+.chips{display:inline-flex;gap:4px;flex-wrap:wrap}
+.chip{border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:16px;padding:5px 14px;font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ledger);border-color:var(--ledger);color:#fff;font-weight:600}
+#misLedger .hero{grid-column:span 2;background:var(--ledger-soft)}
+#misLedger .hero dd{font-size:30px}
+#misSrc a{color:var(--ledger)}
+#misSrc .bad{color:var(--seal)}
+table.mis tr.main{cursor:pointer}table.mis tr.main:hover td{background:var(--ledger-soft)}
+table.mis tfoot td{border-top:2px solid var(--rule);background:var(--paper)}
+@media print{body.print-mgmt #mgNav,body.print-mgmt #mgMisSec .panel{display:none!important}body.print-mgmt #misStamp{display:block!important}
+  body.print-mgmt table.mis{font-size:10px}body.print-mgmt table.mis td.name{min-width:0;white-space:normal}body.print-mgmt table.mis thead{display:table-header-group}body.print-mgmt table.mis tfoot{display:table-row-group}}
+@media (max-width:700px){#misLedger .hero{grid-column:auto}}
+
 /* Access control: switched-off items stay in the page (the app script binds to them) but are never shown */
 [data-off]{display:none!important}
 body.no-export [data-export],body.no-export .tk [data-a="csv"]{display:none!important}
@@ -509,6 +523,11 @@ fetch("version", {cache: "no-store"}).then(r => r.json()).then(v => { if (!v.tim
   </section>
 
   <section data-panel="mgmt" class="hidden">
+    <div class="subnav" id="mgNav" role="tablist" aria-label="Management dashboard sections">
+      <button data-sec="cmp" aria-selected="true">Compliance tracker</button>
+      <button data-sec="mis" data-perm="mis.creditors" data-off aria-selected="false">MIS</button>
+    </div>
+    <div id="mgCmpSec">
     <div class="panel">
       <h2>Management dashboard – statutory compliance</h2>
       <p class="lead">Every return and payment for each company on Highrise (Kanix- Highrise), with its due date. Enter the date it was filed or paid and the amount: the dashboard marks it on time or late against the due date, and overdue when the due date passes with nothing entered. A return applies only when the company is registered for it (GST needs a GSTIN in the master; TDS a TAN; PF, ESI and P.Tax their numbers) – set these once under <b>Company registrations</b>. Every change is saved to the data sheet with who changed it and when.</p>
@@ -532,6 +551,34 @@ fetch("version", {cache: "no-store"}).then(r => r.json()).then(v => { if (!v.tim
     <p class="small" id="mgStamp" style="display:none"></p>
     <p class="small" id="mgCount"></p>
     <div class="tablewrap"><table id="tMg" class="cmp"></table></div>
+    </div>
+    <div id="mgMisSec" class="hidden">
+      <div class="panel">
+        <h2>MIS</h2>
+        <p class="lead">Management figures read live from the reports the accounts team saves in Google Drive. Pick a report; <b>Refresh from Drive</b> reads the newest file in its Drive folder again.</p>
+      </div>
+      <div class="toolbar">
+        <span class="fl">Report</span>
+        <div class="chips" role="group" aria-label="Report"><button class="chip" data-mis="creditors" aria-pressed="true">Creditors</button></div>
+        <span class="sp"></span>
+        <button class="lbtn" id="misRefresh">Refresh from Drive</button>
+      </div>
+      <p class="small" id="misSrc">Loading…</p>
+      <dl class="ledger" id="misLedger"></dl>
+      <div class="toolbar">
+        <button class="lbtn hidden" id="misBack">← All companies</button>
+        <div class="chips hidden" id="misView" role="group" aria-label="View"><button class="chip" data-v="parties" aria-pressed="true">Party-wise</button><button class="chip" data-v="bills" aria-pressed="false">Bill-wise overdue</button></div>
+        <input type="search" id="misQ" placeholder="Search" aria-label="Search">
+        <label class="fl hidden" id="misBucketL">Ageing <select id="misBucket" aria-label="Ageing"><option value="">All</option><option value="d1_15">1–15 days</option><option value="d16_30">16–30 days</option><option value="d31_180">31–180 days</option><option value="d180">Over 180 days</option></select></label>
+        <label class="fl" id="misMsmeL">MSME <select id="misMsme" aria-label="MSME"><option value="">All</option><option value="y">MSME only</option></select></label>
+        <span class="sp"></span>
+        <button class="lbtn" data-export="mis">Download CSV</button>
+        <button class="lbtn" id="misPrint">Print</button>
+      </div>
+      <p class="small" id="misStamp" style="display:none"></p>
+      <p class="small" id="misCount"></p>
+      <div class="tablewrap"><table id="tMis" class="mis"></table></div>
+    </div>
   </section>
 
   <section data-panel="obs" class="hidden">
@@ -981,6 +1028,89 @@ function renderSetup(edit){
   });
   t._head = ["Sr", "Name of company", "GSTIN", ...F.map(f => f[1]), "Updated by", "Updated at"];
   t._rows = rows.map((e, i) => { const s = setupOf(e.name); return [i + 1, e.name, validGstin(e.gst) ? e.gst : "", ...F.map(([k]) => s[k] === "Y" ? "Yes" : s[k] || ""), s.by, s.at]; });
+}
+/* ================= Management dashboard: sections (Compliance tracker / MIS) and MIS – Creditors ================= */
+let mgSec = "cmp", MIS = null, misErr = "", misLoading = false, misCo = null, misView = "parties", misSort = {k: "total", d: -1};
+function mgShow(sec){
+  mgSec = sec;
+  document.querySelectorAll("#mgNav button").forEach(b => b.setAttribute("aria-selected", b.dataset.sec === sec));
+  $("#mgCmpSec").classList.toggle("hidden", sec !== "cmp");
+  $("#mgMisSec").classList.toggle("hidden", sec !== "mis");
+  if (sec === "mis" && !MIS && !misLoading) loadMis(false);
+}
+async function loadMis(refresh){
+  misLoading = true; $("#misSrc").textContent = refresh ? "Reading the newest file from Drive…" : "Loading…"; $("#misRefresh").disabled = true;
+  try { MIS = await api("api/mis/creditors" + (refresh ? "?refresh=1" : "")); misErr = ""; if (misCo) await openMisCo(misCo.name, true); }
+  catch (e) { misErr = e.message; }
+  misLoading = false; $("#misRefresh").disabled = false; renderMis();
+}
+async function openMisCo(name, quiet){
+  try { misCo = await api("api/mis/creditors/company?name=" + encodeURIComponent(name)); misSort = {k: "total", d: -1}; misView = "parties"; $("#misQ").value = ""; }
+  catch (e) { if (!quiet) alert(e.message); misCo = null; }
+  if (!quiet) renderMis();
+}
+const lk = v => INR2.format(v || 0);                       // ₹ lakh, 2 decimals
+const rs = v => v ? INR.format(Math.round(v)) : "–";        // ₹ rupees
+const pct = v => (v * 100).toFixed(1) + "%";
+function renderMis(){
+  if (!$("#tMis")) return;
+  if (!MIS) { $("#misSrc").textContent = misErr ? "Could not read the Creditors report: " + misErr : "Loading…"; $("#misLedger").innerHTML = ""; $("#tMis").innerHTML = ""; return; }
+  const f = MIS.file, saved = new Date(f.modifiedTime).toLocaleString("en-IN", {dateStyle: "medium", timeStyle: "short"});
+  $("#misSrc").innerHTML = `Creditors file in Drive: <a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a> (saved ${esc(saved)}) · <a href="${esc(MIS.folderUrl)}" target="_blank" rel="noopener">Open the Drive folder</a> · read ${esc(new Date(MIS.readAt).toLocaleString("en-IN", {timeStyle: "short"}))}` + (misErr ? ` · <span class="bad">Last refresh failed: ${esc(misErr)}</span>` : "");
+  const co = misCo ? MIS.companies.find(c => c.name === misCo.name) : null, t0 = co || MIS.grand;
+  const tile = (label, v, sub, cls = "") => `<div><dt>${label}</dt><dd class="${cls}">₹${lk(v)}<small>${sub || "lakh"}</small></dd></div>`;
+  $("#misLedger").innerHTML =
+    `<div class="hero"><dt>Total creditors as on ${esc(MIS.asOn)}${co ? " – " + esc(co.name) : ""}</dt><dd>₹${lk(t0.total)}<small>lakh · ${INR.format(t0.bills)} open bills · ${INR.format(t0.parties)} parties</small></dd></div>` +
+    tile("Not due", t0.notDue) + tile("Overdue", t0.overdue, `lakh · ${pct(t0.pctOverdue)} of payable`, "bad") +
+    tile("Overdue 1–15 days", t0.d1_15) + tile("16–30 days", t0.d16_30) + tile("31–180 days", t0.d31_180) + tile("Over 180 days", t0.d180, "lakh", t0.d180 ? "bad" : "") +
+    tile("Advances / debit balances", t0.advances) + `<div><dt>Net payable / (net advance)</dt><dd>${t0.net < 0 ? "(₹" + lk(-t0.net) + ")" : "₹" + lk(t0.net)}<small>lakh</small></dd></div>`;
+
+  $("#misBack").classList.toggle("hidden", !misCo);
+  $("#misView").classList.toggle("hidden", !misCo);
+  $("#misBucketL").classList.toggle("hidden", !misCo || misView !== "parties");
+  $("#misMsmeL").classList.toggle("hidden", !misCo);
+  $("#misView").querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === misView));
+  const q = norm($("#misQ").value || ""), msme = $("#misMsme").value, bucket = $("#misBucket").value;
+  const arrow = k => misSort.k === k ? (misSort.d > 0 ? " ▲" : " ▼") : "";
+  const sorter = (list, get) => list.sort((a, b) => { const x = get(a, misSort.k), y = get(b, misSort.k); return (x > y ? 1 : x < y ? -1 : 0) * misSort.d; });
+  const t = $("#tMis"); let cols, list, foot = "";
+  if (!misCo) {
+    cols = [["name", "Company"], ["total", "Total payable", 1], ["notDue", "Not due", 1], ["overdue", "Overdue", 1], ["d1_15", "1–15 days", 1], ["d16_30", "16–30 days", 1], ["d31_180", "31–180 days", 1], ["d180", "Over 180 days", 1], ["pctOverdue", "% overdue", 1], ["advances", "Advances", 1], ["net", "Net payable", 1], ["bills", "Open bills", 1], ["parties", "Parties", 1]];
+    list = sorter(MIS.companies.filter(c => !q || norm(c.name).includes(q)), (c, k) => k === "name" ? c.name : c[k]);
+    const cell = (c, k) => k === "name" ? `<td class="name">${esc(c.name)}</td>` : k === "pctOverdue" ? `<td class="r">${pct(c[k])}</td>` : ["bills", "parties"].includes(k) ? `<td class="r">${INR.format(c[k])}</td>` : `<td class="r">${c[k] < 0 ? "(" + lk(-c[k]) + ")" : lk(c[k])}</td>`;
+    t.innerHTML = `<thead><tr><th>#</th>${cols.map(([k, h, r]) => `<th data-k="${k}" class="${r ? "r" : ""}">${h}${r && k !== "pctOverdue" && k !== "bills" && k !== "parties" ? " (₹ lakh)" : ""}${arrow(k)}</th>`).join("")}</tr></thead><tbody>` +
+      list.map((c, i) => `<tr class="main" data-co="${esc(c.name)}" title="Click for party-wise detail"><td>${i + 1}</td>${cols.map(([k]) => cell(c, k)).join("")}</tr>`).join("") + `</tbody>` +
+      `<tfoot><tr><td></td>${cols.map(([k]) => k === "name" ? `<td><b>Group total (${MIS.companies.length})</b></td>` : `<td class="r"><b>${k === "pctOverdue" ? pct(MIS.grand[k]) : ["bills", "parties"].includes(k) ? INR.format(MIS.grand[k]) : MIS.grand[k] < 0 ? "(" + lk(-MIS.grand[k]) + ")" : lk(MIS.grand[k])}</b></td>`).join("")}</tr></tfoot>`;
+    t.querySelectorAll("tr.main").forEach(tr => tr.onclick = () => openMisCo(tr.dataset.co));
+    $("#misCount").textContent = `${list.length} of ${MIS.companies.length} companies and individuals · ₹ in lakh · click a company for its party-wise and bill-wise detail.`;
+    t._head = ["#", ...cols.map(c => c[1] + (c[2] && !["pctOverdue", "bills", "parties"].includes(c[0]) ? " (₹ lakh)" : ""))];
+    t._rows = list.map((c, i) => [i + 1, ...cols.map(([k]) => k === "name" ? c.name : k === "pctOverdue" ? pct(c[k]) : +(+c[k]).toFixed(2))]);
+    t._name = `Creditors_${MIS.asOn}`;
+  } else if (misView === "parties") {
+    cols = [["party", "Party"], ["group", "Ledger group"], ["msme", "MSME"], ["bills", "Bills", 1], ["total", "Total payable", 1], ["notDue", "Not due", 1], ["overdue", "Overdue", 1], ["d1_15", "1–15 days", 1], ["d16_30", "16–30 days", 1], ["d31_180", "31–180 days", 1], ["d180", "Over 180 days", 1], ["advances", "Advances", 1], ["net", "Net balance", 1], ["drcr", "Dr / Cr"]];
+    list = sorter(misCo.parties.filter(p => (!q || norm(p.party + " " + p.group).includes(q)) && (!msme || /yes/i.test(p.msme)) && (!bucket || p[bucket] > 0)), (p, k) => p[k]);
+    t.innerHTML = `<thead><tr><th>#</th>${cols.map(([k, h, r]) => `<th data-k="${k}" class="${r ? "r" : ""}">${h}${r && k !== "bills" ? " (₹)" : ""}${arrow(k)}</th>`).join("")}</tr></thead><tbody>` +
+      list.map((p, i) => `<tr><td>${i + 1}</td>${cols.map(([k, , r]) => r ? `<td class="r">${k === "bills" ? p[k] : rs(p[k])}</td>` : `<td class="${k === "party" ? "name" : ""}">${esc(p[k])}</td>`).join("")}</tr>`).join("") + `</tbody>` +
+      `<tfoot><tr><td></td>${cols.map(([k, , r]) => k === "party" ? `<td><b>Total (${list.length})</b></td>` : r ? `<td class="r"><b>${k === "bills" ? INR.format(list.reduce((s, p) => s + p[k], 0)) : rs(list.reduce((s, p) => s + p[k], 0))}</b></td>` : "<td></td>").join("")}</tr></tfoot>`;
+    $("#misCount").textContent = `${misCo.name} · ${list.length} of ${misCo.parties.length} parties · ₹ in rupees.`;
+    t._head = ["#", ...cols.map(c => c[1] + (c[2] && c[0] !== "bills" ? " (₹)" : ""))];
+    t._rows = list.map((p, i) => [i + 1, ...cols.map(([k]) => p[k])]);
+    t._name = `Creditors_${MIS.asOn}_${misCo.name}_parties`;
+  } else {
+    cols = [["party", "Party"], ["msme", "MSME"], ["vchNo", "Vch no"], ["billNo", "Bill no"], ["billDate", "Bill date"], ["dueDate", "Due date"], ["days", "Days overdue", 1], ["bucket", "Bucket"], ["amount", "Overdue amount", 1], ["costCentre", "Cost centre"], ["narration", "Narration"]];
+    const dkey = s => (s || "").split("-").reverse().join("");
+    list = sorter(misCo.bills.filter(b => (!q || norm(b.party + " " + b.billNo + " " + b.narration + " " + b.costCentre).includes(q)) && (!msme || /yes/i.test(b.msme))),
+      (b, k) => /Date$/.test(k) ? dkey(b[k]) : k === "total" ? b.amount : b[k]);
+    t.innerHTML = `<thead><tr><th>#</th>${cols.map(([k, h, r]) => `<th data-k="${k}" class="${r ? "r" : ""}">${h}${k === "amount" ? " (₹)" : ""}${arrow(k)}</th>`).join("")}</tr></thead><tbody>` +
+      list.map((b, i) => `<tr><td>${i + 1}</td>${cols.map(([k, , r]) => r ? `<td class="r">${k === "amount" ? rs(b[k]) : INR.format(b[k])}</td>` : `<td class="${k === "party" ? "name" : ""}">${esc(b[k])}</td>`).join("")}</tr>`).join("") + `</tbody>` +
+      `<tfoot><tr><td></td><td><b>Total (${list.length} bills)</b></td>${cols.slice(1).map(([k]) => k === "amount" ? `<td class="r"><b>${rs(list.reduce((s, b) => s + b.amount, 0))}</b></td>` : "<td></td>").join("")}</tr></tfoot>`;
+    $("#misCount").textContent = `${misCo.name} · ${list.length} of ${misCo.bills.length} overdue bills · ₹ in rupees.`;
+    t._head = ["#", ...cols.map(c => c[1] + (c[0] === "amount" ? " (₹)" : ""))];
+    t._rows = list.map((b, i) => [i + 1, ...cols.map(([k]) => b[k])]);
+    t._name = `Creditors_${MIS.asOn}_${misCo.name}_overdue_bills`;
+  }
+  t.querySelectorAll("th[data-k]").forEach(h => h.onclick = () => { const k = h.dataset.k, num = !/^(name|party|group|msme|drcr|vchNo|billNo|bucket|costCentre|narration)$/.test(k);
+    misSort = {k, d: misSort.k === k ? -misSort.d : num ? -1 : 1}; renderMis(); });
 }
 function renderObs(){
   $("#checks").innerHTML = Object.entries(CHECK_LABEL).map(([k, l]) => { const fail = E.filter(e => !e.checks[k]).length;
@@ -2023,6 +2153,12 @@ document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => selectT
 [["#q","q"],["#fCon","con"],["#fProj","proj"],["#fGst","gst"],["#fSw","sw"],["#fDir","dir"]].forEach(([s, k]) => $(s).addEventListener("input", e => { F[k] = e.target.value; renderRegister(); }));
 $("#clearF").onclick = () => goRegister({});
 $("#fCap").oninput = renderCapital; $("#fKind").oninput = e => { finKind = e.target.value; renderFin(); }; $("#fSev").oninput = renderObs; ["#mgQ", "#mgPer", "#mgHead", "#mgRet", "#mgSt", "#mgAmt", "#mgAmtMin", "#mgUp"].forEach(x => $(x).addEventListener("input", renderMgmt));
+document.querySelectorAll("#mgNav button").forEach(b => b.onclick = () => mgShow(b.dataset.sec));
+$("#misRefresh").onclick = () => loadMis(true);
+$("#misBack").onclick = () => { misCo = null; misSort = {k: "total", d: -1}; $("#misQ").value = ""; renderMis(); };
+$("#misView").querySelectorAll(".chip").forEach(b => b.onclick = () => { misView = b.dataset.v; misSort = {k: misView === "bills" ? "days" : "total", d: -1}; renderMis(); });
+["#misQ", "#misMsme", "#misBucket"].forEach(x => $(x).addEventListener("input", renderMis));
+$("#misPrint").onclick = () => { $("#misStamp").textContent = `Management dashboard – MIS: Creditors as on ${MIS ? MIS.asOn : ""}${misCo ? " – " + misCo.name + (misView === "bills" ? " – bill-wise overdue" : " – party-wise") : ""} – printed ${new Date().toLocaleString("en-IN", {dateStyle: "medium", timeStyle: "short"})}`; document.body.classList.add("print-mgmt"); window.print(); };
 $("#mgSetupBtn").onclick = () => { mgSetup = !mgSetup; sortMg = {k: "sr", d: 1}; renderMgmt(); }; $("#mgRefresh").onclick = () => loadCompliance(true);
 $("#mgPrint").onclick = () => { $("#mgStamp").textContent = `Management dashboard – ${mgSetup ? "company registrations" : "compliance for " + perLabel($("#mgPer").value) + ($("#mgRet").value ? " – " + $("#mgRet").selectedOptions[0].text : $("#mgHead").value ? " – " + $("#mgHead").value : "") + ($("#mgSt").value ? " – " + $("#mgSt").value : "")} – printed ${new Date().toLocaleString("en-IN", {dateStyle:"medium", timeStyle:"short"})}`; document.body.classList.add("print-mgmt"); renderMgmt(); window.print(); };
 window.addEventListener("afterprint", () => { if (!document.body.classList.contains("print-mgmt")) return; document.body.classList.remove("print-mgmt"); renderMgmt(); });
@@ -2049,6 +2185,7 @@ document.querySelectorAll("[data-export]").forEach(b => b.onclick = () => {
   if (w === "dir") csvDownload("Director_Register", ["Sr","Name","DIN / DPIN","PAN","PAN check","Date of birth","Age","Aadhaar (masked)","Positions","Company directorships","Entities and designation"],
     drPeople().map((p, i) => { const inf = drInfo(p); return [i + 1, p.name, p.din, inf.pan, drPanCheck(inf.pan, p.name).txt, inf.dob ? inf.dob.split("-").reverse().join("-") : "", drAge(inf.dob), drMask(inf.aad), p.roles.length, drCo(p), p.roles.map(r => `${r.entity} – ${r.desig}`).join("; ")]; }));
   if (w === "mgmt") csvDownload(mgSetup ? "Compliance_registrations" : `Compliance_${$("#mgPer").value}${$("#mgRet").value ? "_" + $("#mgRet").value : $("#mgHead").value ? "_" + $("#mgHead").value : ""}`, $("#tMg")._head, $("#tMg")._rows);
+  if (w === "mis" && $("#tMis")._rows) csvDownload($("#tMis")._name, $("#tMis")._head, $("#tMis")._rows);
   if (w === "obs") csvDownload("Company_Master_Observations", ["Severity","Entity","Observation","Recommended action","Action owner","Target date","Status"], $("#tObs")._rows.map(o => [o.sev, o.entity, o.obs, o.action, "", "", "Open"]));
 });
 

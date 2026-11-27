@@ -11,6 +11,7 @@ const g = require("./google.js");
 const {findDocuments} = require("./docs.js");
 const access = require("./access.js");
 const compliance = require("./compliance.js");
+const mis = require("./mis.js");
 
 const CONFIG = {
   port: +process.env.PORT || 3000,
@@ -187,6 +188,19 @@ http.createServer(async (req, res) => {
     if (p === "/api/data") return json(res, 200, forUser(await data(q.has("refresh") && perms["act.refresh"]), perms));
     const doc = /^\/api\/doc\/([A-Za-z0-9_-]{10,})$/.exec(p);
     if (doc) return await sendDoc(res, doc[1], perms);
+
+    if (p.startsWith("/api/mis/")) {
+      if (!perms["tab.mgmt"] || !perms["mis.creditors"]) return json(res, 403, {error: "No access to the Creditors MIS"});
+      try {
+        if (p === "/api/mis/creditors") return json(res, 200, await mis.creditorsSummary(q.has("refresh")));
+        if (p === "/api/mis/creditors/company") return json(res, 200, await mis.creditorsCompany(q.get("name") || ""));
+      } catch (e) {
+        if (e.google && (e.status === 403 || e.status === 404))
+          return json(res, 502, {error: e.message, hint: `Share the "Alcove - Creditors Outstanding Reports" folder in Drive with ${g.clientEmail()} (Viewer).`});
+        throw e;
+      }
+      return json(res, 404, {error: "Not found"});
+    }
 
     if (p.startsWith("/api/compliance")) {
       if (!perms["tab.mgmt"]) return json(res, 403, {error: "No access to the Management dashboard"});
