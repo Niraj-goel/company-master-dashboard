@@ -22,6 +22,40 @@ const CONFIG = {
   cacheMs: 2 * 60 * 1000,                     // reuse a read for 2 minutes unless ?refresh=1
 };
 
+// Statutory compliance tracker (Management dashboard). Every save appends a row to the "Compliance" tab, so the
+// tab is also the audit trail; the latest row for a period + company + compliance is the current value.
+const COMPLIANCE = {tab: "Compliance", heads: ["TDS", "GST", "PF", "ESI", "P.Tax", "Gratuity", "Pension"],
+  status: ["Pending", "On time", "Late", "N/A"],
+  header: ["Period", "Company", "Compliance", "Status", "Amount (₹)", "Remark", "Updated by", "Updated at"]};
+let cmpCache = null, cmpAt = 0;
+async function complianceRows(fresh) {
+  if (!fresh && cmpCache && Date.now() - cmpAt < 30_000) return cmpCache;
+  let rows = [];
+  try { rows = ((await g.sheetValues(CONFIG.sheetId, [`'${COMPLIANCE.tab}'`])).valueRanges[0].values || []).slice(1); }
+  catch (e) { if (!/Unable to parse range/i.test(e.message)) throw e; }   // tab not created yet
+  const latest = new Map();
+  for (const r of rows) { const [period, company, head] = r.map(v => String(v ?? "").trim()); if (period && company && head) latest.set(`${period}|${company}|${head}`, r); }
+  cmpCache = [...latest.values()].map(r => ({period: String(r[0]), company: String(r[1]), head: String(r[2]), status: String(r[3] || "Pending"),
+    amount: r[4] === "" || r[4] == null ? null : +r[4], remark: String(r[5] || ""), by: String(r[6] || ""), at: String(r[7] || "")}));
+  cmpAt = Date.now();
+  return cmpCache;
+}
+async function saveCompliance(u, b) {
+  const items = Array.isArray(b.items) ? b.items.slice(0, 500) : [];
+  const rows = items.map(x => {
+    const period = String(x.period || ""), company = String(x.company || "").trim(), head = String(x.head || "");
+    if (!/^d{4}-(0[1-9]|1[0-2])$/.test(period)) throw Object.assign(new Error("Bad period"), {status: 400});
+    if (!company || company.length > 200) throw Object.assign(new Error("Bad company"), {status: 400});
+    if (!COMPLIANCE.heads.includes(head)) throw Object.assign(new Error("Bad compliance"), {status: 400});
+    const status = COMPLIANCE.status.includes(x.status) ? x.status : "Pending";
+    const amount = x.amount === "" || x.amount == null ? "" : Number(x.amount);
+    if (amount !== "" && !(isFinite(amount) && amount >= 0)) throw Object.assign(new Error("Amount must be a number"), {status: 400});
+    return [period, company, head, status, amount, String(x.remark || "").slice(0, 300), u.user, new Date().toISOString()];
+  });
+  if (rows.length) await g.appendRows(CONFIG.sheetId, COMPLIANCE.tab, COMPLIANCE.header, rows);
+  cmpCache = null;
+}
+
 // Which sheet tabs each access-matrix switch needs. A tab is sent only if one of the user's switches needs it.
 const ALWAYS = ["Entities", "MCA master", "MCA charges", "Financials"];
 const TAB_TABLES = {
@@ -150,12 +184,15 @@ function who(req) {
 const me = u => ({user: u.user, name: u.name || u.user, admin: !!u.admin, owner: !!u.owner,
   perms: access.permsFor(u), noLogin: !access.anyAccounts()});
 
+const BUILD = require("./buildinfo.js")(__dirname);   // when the code was last updated, shown in the page header
+
 const page = name => fs.readFileSync(path.join(__dirname, "public", name));
 
 http.createServer(async (req, res) => {
   const p = new URL(req.url, "http://x").pathname, q = new URL(req.url, "http://x").searchParams;
   try {
     if (p === "/healthz") return send(res, 200, "text/plain", "ok");
+    if (p === "/version") return json(res, 200, BUILD);
 
     if (p === "/login" && req.method === "POST") {
       const b = await readJson(req);
@@ -183,6 +220,16 @@ http.createServer(async (req, res) => {
     if (p === "/api/data") return json(res, 200, forUser(await data(q.has("refresh") && perms["act.refresh"]), perms));
     const doc = /^\/api\/doc\/([A-Za-z0-9_-]{10,})$/.exec(p);
     if (doc) return await sendDoc(res, doc[1], perms);
+
+    if (p === "/api/compliance" && req.method === "GET") {
+      if (!perms["tab.mgmt"]) return json(res, 403, {error: "No access to the Management dashboard"});
+      return json(res, 200, {heads: COMPLIANCE.heads, status: COMPLIANCE.status, canEdit: !!perms["act.compliance"], rows: await complianceRows(q.has("refresh"))});
+    }
+    if (p === "/api/compliance" && req.method === "POST") {
+      if (!perms["tab.mgmt"] || !perms["act.compliance"]) return json(res, 403, {error: "You can view but not update compliance"});
+      await saveCompliance(u, await readJson(req));
+      return json(res, 200, {ok: true, rows: await complianceRows(true)});
+    }
 
     if (p === "/api/password" && req.method === "POST") {
       const b = await readJson(req);

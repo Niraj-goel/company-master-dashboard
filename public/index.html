@@ -186,7 +186,35 @@ th .arw{color:var(--ochre)}
 @media (max-width:700px){.mast,main{padding-left:14px;padding-right:14px}.grid2{grid-template-columns:1fr}.toolbar input[type=search]{min-width:0;width:100%}}
 @media print{.mast label,nav.tabs,.toolbar{display:none}.mast{background:#fff;color:#000}[data-panel]{display:block!important}
   body.print-mgmt [data-panel]:not([data-panel="mgmt"]),body.print-mgmt #ledger{display:none!important}
-  body.print-mgmt #tMg thead{display:table-header-group}body.print-mgmt .ctrls,body.print-mgmt #who,body.print-mgmt #srcLine,body.print-mgmt #banner{display:none!important}body.print-mgmt .mast h1{color:#000}body.print-mgmt main{background:#fff}body.print-mgmt #mgStamp{display:block!important}body.print-mgmt #tMg th{cursor:default}body.print-mgmt #tMg tr{break-inside:avoid}}
+  body.print-mgmt #tMg thead{display:table-header-group}body.print-mgmt .ctrls,body.print-mgmt #who,body.print-mgmt #srcLine,body.print-mgmt #lastUpd,body.print-mgmt #banner{display:none!important}body.print-mgmt .mast h1{color:#000}body.print-mgmt main{background:#fff}body.print-mgmt #mgStamp{display:block!important}body.print-mgmt #tMg th{cursor:default}body.print-mgmt #tMg tr{break-inside:avoid}}
+
+/* Management dashboard: compliance */
+.cmpcards{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.cmpcard{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:128px;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);color:var(--ink);cursor:pointer;font:inherit;font-size:12px;text-align:left}
+.cmpcard b{font-size:14px}.cmpcard em{font-style:normal;font-weight:600;margin-top:2px}
+.cmpcard.on{border-color:var(--ledger);box-shadow:0 0 0 2px var(--ledger-soft)}
+.cmpcard .ok,.cst.ok{color:var(--ok)}.cmpcard .late,.cst.late{color:var(--ochre)}.cmpcard .pend,.cst.pend{color:var(--seal)}.cmpcard .na,.cst.na{color:var(--muted)}
+.toolbar .fl{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+table.cmp th.grp,table.cmp td.grp{border-left:2px solid var(--rule)}
+table.cmp th.grp{text-align:center}
+table.cmp th[data-k]{cursor:pointer}
+table.cmp select.cst{font:inherit;font-size:13px;font-weight:600;padding:3px 4px;border:1px solid var(--rule);border-radius:4px;background:var(--sheet)}
+table.cmp span.cst{font-weight:600;white-space:nowrap}
+table.cmp input.camt{width:110px;text-align:right;font:inherit;padding:3px 6px;border:1px solid var(--rule);border-radius:4px;background:var(--sheet);color:var(--ink)}
+table.cmp input.crem{width:100%;min-width:140px;font:inherit;padding:3px 6px;border:1px solid var(--rule);border-radius:4px;background:var(--sheet);color:var(--ink)}
+table.cmp tfoot td{border-top:2px solid var(--rule);background:var(--paper)}
+@media print{
+  body.print-mgmt .cmpcard{border-color:#999}
+  body.print-mgmt table.cmp select.cst,body.print-mgmt table.cmp input{border:0;appearance:none;-webkit-appearance:none;background:none;padding:0;width:auto}
+  body.print-mgmt table.cmp{font-size:10px;width:100%;table-layout:auto}
+  body.print-mgmt table.cmp td.name{min-width:0;white-space:normal}
+  body.print-mgmt table.cmp th{position:static;white-space:normal}
+  body.print-mgmt .tablewrap{border:0}
+  body.print-mgmt table.cmp tfoot{display:table-row-group}
+  body.print-mgmt table.cmp th,body.print-mgmt table.cmp td{padding:4px 5px}
+  body.print-mgmt .tablewrap{overflow:visible!important}
+  @page{size:A4 landscape;margin:10mm}
+}
 
 /* Access control: switched-off items stay in the page (the app script binds to them) but are never shown */
 [data-off]{display:none!important}
@@ -228,6 +256,7 @@ body.no-export [data-export],body.no-export .tk [data-a="csv"]{display:none!impo
     <div>
       <h1>Alcove Group – Company Master</h1>
       <p id="srcLine"></p>
+      <p id="lastUpd" hidden></p>
       <div class="who" id="who" hidden></div>
     </div>
     <div class="ctrls" style="display:flex;gap:8px;flex-wrap:wrap">
@@ -465,18 +494,25 @@ body.no-export [data-export],body.no-export .tk [data-a="csv"]{display:none!impo
 
   <section data-panel="mgmt" class="hidden">
     <div class="panel">
-      <h2>Management dashboard</h2>
-      <p class="lead">Companies whose accounting software is Highrise (Kanix- Highrise), taken live from the Entities sheet.</p>
+      <h2>Management dashboard – statutory compliance</h2>
+      <p class="lead">For each company on Highrise (Kanix- Highrise): whether each return was filed and uploaded in the system on time, and the amount. Pick a month and a compliance, then filter by tick or amount. Every change is saved to the Compliance tab of the data sheet with who changed it and when.</p>
     </div>
+    <div class="cmpcards" id="mgCards"></div>
     <div class="toolbar">
+      <label class="fl">Month <select id="mgPer" aria-label="Month"></select></label>
+      <label class="fl">Compliance <select id="mgHead" aria-label="Compliance"></select></label>
+      <label class="fl">Tick <select id="mgSt" aria-label="Tick"><option value="">All</option><option>On time</option><option>Late</option><option>Pending</option><option>N/A</option></select></label>
+      <label class="fl">Amount <select id="mgAmt" aria-label="Amount"><option value="">All</option><option value="y">Amount entered</option><option value="n">Amount not entered</option><option value="gt">Above ₹…</option></select>
+        <input type="number" id="mgAmtMin" min="0" placeholder="₹" aria-label="Minimum amount" class="hidden" style="width:110px"></label>
       <input type="search" id="mgQ" placeholder="Search company" aria-label="Search company">
       <span class="sp"></span>
+      <button class="lbtn" id="mgRefresh">Refresh</button>
       <button class="lbtn" data-export="mgmt">Download CSV</button>
       <button class="lbtn" id="mgPrint">Print</button>
     </div>
     <p class="small" id="mgStamp" style="display:none"></p>
     <p class="small" id="mgCount"></p>
-    <div class="tablewrap"><table id="tMg"></table></div>
+    <div class="tablewrap"><table id="tMg" class="cmp"></table></div>
   </section>
 
   <section data-panel="obs" class="hidden">
@@ -758,20 +794,95 @@ function renderCapital(){
   t._rows = rows; t._rt = rt;
 }
 
-/* ================= Management dashboard: companies on Highrise ================= */
-let sortMg = {k:"sr", d:1};
+/* ================= Management dashboard: statutory compliance of companies on Highrise ================= */
+let MGC = null, cmpLoading = false, cmpErr = "", sortMg = {k:"sr", d:1};
+const MGC_ST = {"On time": {c:"ok", t:"✓ On time"}, "Late": {c:"late", t:"! Late"}, "Pending": {c:"pend", t:"☐ Pending"}, "N/A": {c:"na", t:"N/A"}};
+const mgCompanies = () => E.filter(e => /high\s*rise/i.test(e.sw || ""));
+const perLabel = k => { const [y, m] = k.split("-"); return new Date(+y, +m - 1, 1).toLocaleString("en-IN", {month: "short", year: "numeric"}); };
+(function initMgPeriods(){
+  const now = new Date(), opts = [];
+  for (let i = -1; i <= 24; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); opts.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`); }
+  $("#mgPer").innerHTML = opts.map(k => `<option value="${k}">${perLabel(k)}</option>`).join("");
+  $("#mgPer").value = opts[2];   // last month: a month's returns are filed in the following month
+})();
+async function loadCompliance(fresh){
+  if (cmpLoading) return; cmpLoading = true;
+  try { MGC = await api("api/compliance" + (fresh ? "?refresh=1" : "")); cmpErr = ""; }
+  catch (e) { cmpErr = e.message; }
+  cmpLoading = false; renderMgmt();
+}
+const cmpKey = (per, co, h) => `${per}|${co}|${h}`;
+function cmpMap(){ const m = new Map(); (MGC ? MGC.rows : []).forEach(r => m.set(cmpKey(r.period, r.company, r.head), r)); return m; }
+async function saveCmp(item){
+  try { const j = await api("api/compliance", {items: [item]}); MGC.rows = j.rows; }
+  catch (e) { alert("Not saved: " + e.message); }
+  renderMgmt();
+}
 function renderMgmt(){
+  if (!$("#tMg")) return;
+  if (!MGC) {
+    if (cmpErr) { $("#mgCount").textContent = "Could not load compliance: " + cmpErr; return; }
+    $("#mgCount").textContent = "Loading compliance…"; return;
+  }
+  const printing = document.body.classList.contains("print-mgmt");
+  const heads = MGC.heads, edit = MGC.canEdit && !printing, per = $("#mgPer").value, M = cmpMap();
+  if (!$("#mgHead").options.length) $("#mgHead").innerHTML = `<option value="">All compliances</option>` + heads.map(h => `<option>${h}</option>`).join("");
+  const head = $("#mgHead").value, show = head ? [head] : heads, one = !!head;
+  const st = $("#mgSt").value, amtF = $("#mgAmt").value, amtMin = +$("#mgAmtMin").value || 0;
+  $("#mgAmtMin").classList.toggle("hidden", amtF !== "gt");
   const q = norm($("#mgQ").value || "");
-  const all = E.filter(e => /highs*rise/i.test(e.sw || ""));
-  const key = sortMg.k === "name" ? (e => e.name.toLowerCase()) : (e => +e.sr || 0);
-  const rows = all.filter(e => !q || norm(e.name).includes(q)).sort((a, b) => { const x = key(a), y = key(b); return (x > y ? 1 : x < y ? -1 : 0) * sortMg.d; });
-  $("#mgCount").textContent = `${rows.length} of ${all.length} companies on Highrise.`;
-  const th = (k, h) => `<th data-k="${k}">${h}${sortMg.k === k ? (sortMg.d > 0 ? " ▲" : " ▼") : ""}</th>`;
-  const t = $("#tMg");
-  t.innerHTML = `<thead><tr>${th("sr", "Sr")}${th("name", "Name of company")}</tr></thead><tbody>` +
-    (rows.map((e, i) => `<tr><td>${i + 1}</td><td class="name">${esc(e.name)}</td></tr>`).join("") || `<tr><td colspan="2" class="small">No company matches.</td></tr>`) + `</tbody>`;
-  t.querySelectorAll("th").forEach(h => h.onclick = () => { sortMg = {k:h.dataset.k, d: sortMg.k === h.dataset.k ? -sortMg.d : 1}; renderMgmt(); });
-  t._rows = rows;
+  const all = mgCompanies();
+  const cell = (name, h) => { const r = M.get(cmpKey(per, name, h));
+    return {status: r ? r.status : "Pending", amount: r ? r.amount : null, remark: r ? r.remark : "", by: r ? r.by : "", at: r ? r.at : ""}; };
+
+  // Month summary per compliance (all companies); clicking a card filters to that compliance.
+  $("#mgCards").innerHTML = heads.map(h => { const n = {"On time": 0, "Late": 0, "Pending": 0, "N/A": 0}; let amt = 0;
+    all.forEach(e => { const c = cell(e.name, h); n[c.status]++; amt += c.amount || 0; });
+    return `<button class="cmpcard${head === h ? " on" : ""}" data-h="${h}"><b>${h}</b><span class="ok">✓ On time ${n["On time"]}</span><span class="late">! Late ${n.Late}</span><span class="pend">☐ Pending ${n.Pending}</span><span class="na">N/A ${n["N/A"]}</span><em>₹${INR.format(amt)}</em></button>`; }).join("");
+  $("#mgCards").querySelectorAll(".cmpcard").forEach(c => c.onclick = () => { $("#mgHead").value = $("#mgHead").value === c.dataset.h ? "" : c.dataset.h; renderMgmt(); });
+
+  const amtOk = c => amtF === "y" ? c.amount != null : amtF === "n" ? c.amount == null && c.status !== "N/A" : (c.amount || 0) > amtMin;
+  const rows = all.filter(e => !q || norm(e.name).includes(q)).filter(e => {
+    const cs = show.map(h => cell(e.name, h));
+    return (!st || cs.some(c => c.status === st)) && (!amtF || cs.some(amtOk));
+  });
+  const [sk, sh] = sortMg.k.split(":");
+  const key = sk === "name" ? (e => e.name.toLowerCase()) : sk === "st" ? (e => ["On time", "Late", "Pending", "N/A"].indexOf(cell(e.name, sh).status))
+    : sk === "amt" ? (e => cell(e.name, sh).amount ?? -1) : (e => +e.sr || 0);
+  rows.sort((a, b) => { const x = key(a), y = key(b); return (x > y ? 1 : x < y ? -1 : 0) * sortMg.d; });
+  $("#mgCount").textContent = `${perLabel(per)} · ${rows.length} of ${all.length} companies${head ? " · " + head : ""}` +
+    (edit ? ". Choose a tick and type the amount; each change saves straight away." : printing && !one ? ". ✓ on time  ! late  ☐ pending  – not applicable" : ".");
+
+  const arrow = k => sortMg.k === k ? (sortMg.d > 0 ? " ▲" : " ▼") : "";
+  const th = (k, h, cls = "") => `<th data-k="${k}" class="${cls}">${h}${arrow(k)}</th>`;
+  const thead = `<thead><tr><th rowspan="2" data-k="sr">Sr${arrow("sr")}</th><th rowspan="2" data-k="name">Name of company${arrow("name")}</th>` +
+    show.map(h => `<th colspan="${one ? 4 : 2}" class="grp">${h}</th>`).join("") + `</tr><tr>` +
+    show.map(h => th("st:" + h, "Tick", "grp") + th("amt:" + h, "Amount ₹", "r") + (one ? "<th>Remark</th><th>Last updated</th>" : "")).join("") + `</tr></thead>`;
+  const at = (n, h) => `data-co="${esc(n)}" data-h="${h}"`;
+  const stCell = (n, h, c) => edit
+    ? `<select class="cst ${MGC_ST[c.status].c}" ${at(n, h)} aria-label="${h} tick">${MGC.status.map(x => `<option value="${x}"${x === c.status ? " selected" : ""}>${MGC_ST[x].t}</option>`).join("")}</select>`
+    : `<span class="cst ${MGC_ST[c.status].c}">${printing && !one ? MGC_ST[c.status].t.split(" ")[0].replace("N/A", "–") : MGC_ST[c.status].t}</span>`;
+  const amCell = (n, h, c) => edit
+    ? `<input type="number" min="0" step="1" class="camt" ${at(n, h)} value="${c.amount ?? ""}" aria-label="${h} amount">`
+    : (c.amount == null ? "" : INR.format(c.amount));
+  const body = rows.map((e, i) => `<tr><td>${i + 1}</td><td class="name">${esc(e.name)}</td>` + show.map(h => { const c = cell(e.name, h);
+      return `<td class="grp">${stCell(e.name, h, c)}</td><td class="r">${amCell(e.name, h, c)}</td>` + (one
+        ? `<td>${edit ? `<input class="crem" ${at(e.name, h)} value="${esc(c.remark)}" maxlength="300" aria-label="Remark">` : esc(c.remark)}</td>` +
+          `<td class="small">${c.at ? esc(new Date(c.at).toLocaleString("en-IN", {dateStyle: "medium", timeStyle: "short"})) + "<br>" + esc(c.by) : ""}</td>`
+        : ""); }).join("") + `</tr>`).join("")
+    || `<tr><td colspan="${2 + show.length * (one ? 4 : 2)}" class="small">No company matches these filters.</td></tr>`;
+  const foot = `<tfoot><tr><td></td><td><b>Total (${rows.length} companies)</b></td>` + show.map(h => {
+    const ok = rows.filter(e => cell(e.name, h).status === "On time").length, tot = rows.reduce((t, e) => t + (cell(e.name, h).amount || 0), 0);
+    return `<td class="grp small">✓ ${ok} of ${rows.length}</td><td class="r"><b>${INR.format(tot)}</b></td>` + (one ? "<td></td><td></td>" : ""); }).join("") + `</tr></tfoot>`;
+
+  const t = $("#tMg"); t.innerHTML = thead + `<tbody>${body}</tbody>` + foot;
+  t.querySelectorAll("th[data-k]").forEach(h => h.onclick = () => { sortMg = {k: h.dataset.k, d: sortMg.k === h.dataset.k ? -sortMg.d : 1}; renderMgmt(); });
+  const cur = el => { const c = cell(el.dataset.co, el.dataset.h); return {period: per, company: el.dataset.co, head: el.dataset.h, status: c.status, amount: c.amount ?? "", remark: c.remark}; };
+  t.querySelectorAll("select.cst").forEach(el => el.onchange = () => saveCmp({...cur(el), status: el.value}));
+  t.querySelectorAll("input.camt").forEach(el => el.onchange = () => saveCmp({...cur(el), amount: el.value === "" ? "" : +el.value}));
+  t.querySelectorAll("input.crem").forEach(el => el.onchange = () => saveCmp({...cur(el), remark: el.value}));
+  t._head = ["Sr", "Name of company", ...show.flatMap(h => one ? [`${h} tick`, `${h} amount (₹)`, `${h} remark`, "Updated by", "Updated at"] : [`${h} tick`, `${h} amount (₹)`])];
+  t._rows = rows.map((e, i) => [i + 1, e.name, ...show.flatMap(h => { const c = cell(e.name, h); return one ? [c.status, c.amount ?? "", c.remark, c.by, c.at] : [c.status, c.amount ?? ""]; })]);
 }
 function renderObs(){
   $("#checks").innerHTML = Object.entries(CHECK_LABEL).map(([k, l]) => { const fail = E.filter(e => !e.checks[k]).length;
@@ -1807,15 +1918,18 @@ function tkInit(){
 function selectTab(tab){
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
   document.querySelectorAll("[data-panel]").forEach(p => p.classList.toggle("hidden", p.dataset.panel !== tab));
-  $("#ledger").classList.toggle("hidden", ["dirreg", "fin", "loans", "xh", "mgmt"].includes(tab));   // master summary strip not shown on these tabs
+  $("#ledger").classList.toggle("hidden", ["dirreg", "fin", "loans", "xh", "mgmt"].includes(tab));
+  if (tab === "mgmt" && !MGC) loadCompliance();   // compliance is read only when the tab is opened   // master summary strip not shown on these tabs
 }
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => selectTab(b.dataset.tab));
 [["#q","q"],["#fCon","con"],["#fProj","proj"],["#fGst","gst"],["#fSw","sw"],["#fDir","dir"]].forEach(([s, k]) => $(s).addEventListener("input", e => { F[k] = e.target.value; renderRegister(); }));
 $("#clearF").onclick = () => goRegister({});
-$("#fCap").oninput = renderCapital; $("#fKind").oninput = e => { finKind = e.target.value; renderFin(); }; $("#fSev").oninput = renderObs; $("#mgQ").oninput = renderMgmt;
-$("#mgPrint").onclick = () => { $("#mgStamp").textContent = `Management dashboard – printed ${new Date().toLocaleString("en-IN", {dateStyle:"medium", timeStyle:"short"})}`; document.body.classList.add("print-mgmt"); window.print(); };
-window.addEventListener("afterprint", () => document.body.classList.remove("print-mgmt"));
+$("#fCap").oninput = renderCapital; $("#fKind").oninput = e => { finKind = e.target.value; renderFin(); }; $("#fSev").oninput = renderObs; ["#mgQ", "#mgPer", "#mgHead", "#mgSt", "#mgAmt", "#mgAmtMin"].forEach(x => $(x).addEventListener("input", renderMgmt)); $("#mgRefresh").onclick = () => loadCompliance(true);
+$("#mgPrint").onclick = () => { $("#mgStamp").textContent = `Management dashboard – compliance for ${perLabel($("#mgPer").value)}${$("#mgHead").value ? " – " + $("#mgHead").value : ""}${$("#mgSt").value ? " – " + $("#mgSt").value : ""} – printed ${new Date().toLocaleString("en-IN", {dateStyle:"medium", timeStyle:"short"})}`; document.body.classList.add("print-mgmt"); renderMgmt(); window.print(); };
+window.addEventListener("afterprint", () => { if (!document.body.classList.contains("print-mgmt")) return; document.body.classList.remove("print-mgmt"); renderMgmt(); });
 
+fetch("version", {cache: "no-store"}).then(r => r.json()).then(v => { if (!v.time) return; const el = document.getElementById("lastUpd");
+  el.textContent = "Last updated: " + new Date(v.time).toLocaleString("en-IN", {day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"}) + (v.commit ? " (version " + v.commit + ")" : ""); el.hidden = false; }).catch(() => {});
 function csvDownload(name, header, rows){
   const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const csv = [header.map(q).join(","), ...rows.map(r => r.map(q).join(","))].join("\r\n");
@@ -1836,7 +1950,7 @@ document.querySelectorAll("[data-export]").forEach(b => b.onclick = () => {
     existingLoans().map(r => [r.lender, r.borrower, r.amt.toFixed(2), r.route, r.dd ? "Yes" : r.dd === false ? "No" : "To assess", ...CMP_FIELDS.map(([k]) => reqFields(r).some(([q]) => q === k) ? ((CMP[r.id] || {})[k]) || "Pending" : "Not required"), "", ""]));
   if (w === "dir") csvDownload("Director_Register", ["Sr","Name","DIN / DPIN","PAN","PAN check","Date of birth","Age","Aadhaar (masked)","Positions","Company directorships","Entities and designation"],
     drPeople().map((p, i) => { const inf = drInfo(p); return [i + 1, p.name, p.din, inf.pan, drPanCheck(inf.pan, p.name).txt, inf.dob ? inf.dob.split("-").reverse().join("-") : "", drAge(inf.dob), drMask(inf.aad), p.roles.length, drCo(p), p.roles.map(r => `${r.entity} – ${r.desig}`).join("; ")]; }));
-  if (w === "mgmt") csvDownload("Management_Dashboard_Highrise_Companies", ["Sr","Name of company"], $("#tMg")._rows.map((e, i) => [i + 1, e.name]));
+  if (w === "mgmt") csvDownload(`Compliance_${$("#mgPer").value}${$("#mgHead").value ? "_" + $("#mgHead").value : ""}`, $("#tMg")._head, $("#tMg")._rows);
   if (w === "obs") csvDownload("Company_Master_Observations", ["Severity","Entity","Observation","Recommended action","Action owner","Target date","Status"], $("#tObs")._rows.map(o => [o.sev, o.entity, o.obs, o.action, "", "", "Open"]));
 });
 

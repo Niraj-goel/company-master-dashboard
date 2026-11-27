@@ -4,7 +4,7 @@ require("./env.js");
 const crypto = require("crypto");
 
 const SCOPES = [
-  "https://www.googleapis.com/auth/spreadsheets.readonly",
+  "https://www.googleapis.com/auth/spreadsheets",   // read, plus writing the Compliance tab
   "https://www.googleapis.com/auth/drive.readonly",
 ].join(" ");
 
@@ -53,8 +53,9 @@ async function accessToken() {
   return token;
 }
 
-async function api(url, {raw = false} = {}) {
-  const res = await fetch(url, {headers: {authorization: `Bearer ${await accessToken()}`}});
+async function api(url, {raw = false, method = "GET", body} = {}) {
+  const res = await fetch(url, {method, headers: {authorization: `Bearer ${await accessToken()}`, ...(body ? {"content-type": "application/json"} : {})},
+    body: body ? JSON.stringify(body) : undefined});
   if (!res.ok) {
     let msg = res.statusText; try { const j = await res.json(); msg = (j.error && j.error.message) || msg; } catch {}
     const e = new Error(`${res.status} ${msg}`); e.status = res.status; e.google = true; throw e;
@@ -65,6 +66,17 @@ async function api(url, {raw = false} = {}) {
 const sheetValues = (id, ranges) =>
   api(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchGet?` +
     new URLSearchParams([...ranges.map(r => ["ranges", r]), ["valueRenderOption", "UNFORMATTED_VALUE"], ["dateTimeRenderOption", "FORMATTED_STRING"]]));
+
+// Appends rows to a tab, creating the tab with a header row first if it does not exist yet.
+async function appendRows(id, tab, header, rows) {
+  const meta = await api(`https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets.properties.title`);
+  if (!meta.sheets.some(s => s.properties.title === tab)) {
+    await api(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {method: "POST", body: {requests: [{addSheet: {properties: {title: tab, gridProperties: {frozenRowCount: 1}}}}]}});
+    rows = [header, ...rows];
+  }
+  return api(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(`'${tab}'!A1`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+    {method: "POST", body: {values: rows}});
+}
 
 async function listFolder(folderId) {
   const files = []; let pageToken;
@@ -79,4 +91,4 @@ async function listFolder(folderId) {
 
 const download = id => api(`https://www.googleapis.com/drive/v3/files/${id}?alt=media&supportsAllDrives=true`, {raw: true});
 
-module.exports = {accessToken, sheetValues, listFolder, download, clientEmail: () => loadKey().client_email};
+module.exports = {accessToken, sheetValues, appendRows, listFolder, download, clientEmail: () => loadKey().client_email};

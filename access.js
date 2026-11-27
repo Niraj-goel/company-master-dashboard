@@ -25,6 +25,7 @@ const PERMS = [
   {key: "act.refresh", group: "Actions", label: "Refresh data from Google now", short: "Refresh data"},
   {key: "act.links", group: "Actions", label: "Open data sheet / Drive folder buttons", short: "Sheet & Drive links"},
   {key: "act.mca", group: "Actions", label: "Load MCA workbooks from own computer", short: "Load MCA files"},
+  {key: "act.compliance", group: "Actions", label: "Update compliance ticks and amounts (Management dashboard)", short: "Update compliance"},
   {key: "act.doclinks", group: "Actions", label: "Document links setup", short: "Doc links setup"},
 ];
 const PERM_KEYS = new Set(PERMS.map(p => p.key));
