@@ -193,6 +193,11 @@ th .arw{color:var(--ochre)}
 .cmpcard{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:128px;padding:8px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);color:var(--ink);cursor:pointer;font:inherit;font-size:12px;text-align:left}
 .cmpcard b{font-size:14px}.cmpcard em{font-style:normal;font-weight:600;margin-top:2px}
 .cmpcard.on{border-color:var(--ledger);box-shadow:0 0 0 2px var(--ledger-soft)}
+.cmpcard .wait,.cst.wait{color:var(--ink)}.cmpcard.off{opacity:.6}
+table.cmp th.rpick{cursor:pointer;text-align:center}table.cmp th.rpick:hover{text-decoration:underline}table.cmp th .small{font-weight:400;white-space:nowrap}
+table.cmp .amt{font-size:12px;color:var(--muted);white-space:nowrap}
+table.cmp input.cdate,table.cmp input.sin,table.cmp select.sin{font:inherit;padding:3px 6px;border:1px solid var(--rule);border-radius:4px;background:var(--sheet);color:var(--ink)}
+table.cmp input.sin:not([type=checkbox]){width:130px}
 .cmpcard .ok,.cst.ok{color:var(--ok)}.cmpcard .late,.cst.late{color:var(--ochre)}.cmpcard .pend,.cst.pend{color:var(--seal)}.cmpcard .na,.cst.na{color:var(--muted)}
 .toolbar .fl{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
 table.cmp th.grp,table.cmp td.grp{border-left:2px solid var(--rule)}
@@ -216,6 +221,8 @@ table.cmp tfoot td{border-top:2px solid var(--rule);background:var(--paper)}
   @page{size:A4 landscape;margin:10mm}
 }
 
+#lastUpd details.lu{display:inline}#lastUpd details.lu summary{display:inline;cursor:pointer;text-decoration:underline}
+#lastUpd details.lu[open] ul{margin:6px 0 0;padding-left:18px;max-height:220px;overflow:auto}#lastUpd details.lu li span{opacity:.75;margin-right:6px}
 /* Access control: switched-off items stay in the page (the app script binds to them) but are never shown */
 [data-off]{display:none!important}
 body.no-export [data-export],body.no-export .tk [data-a="csv"]{display:none!important}
@@ -257,6 +264,15 @@ body.no-export [data-export],body.no-export .tk [data-a="csv"]{display:none!impo
       <h1>Alcove Group – Company Master</h1>
       <p id="srcLine"></p>
       <p id="lastUpd" hidden></p>
+      <script>
+fetch("version", {cache: "no-store"}).then(r => r.json()).then(v => { if (!v.time) return;
+    const el = document.getElementById("lastUpd"), f = t => new Date(t).toLocaleString("en-IN", {day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"});
+    const e = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
+    const ch = v.changes || [];
+    el.innerHTML = "Last updated: <b>" + f(v.time) + "</b>" + (ch[0] ? " – " + e(ch[0].summary) : "") +
+      (ch.length ? ' <details class="lu"><summary>What changed</summary><ul>' + ch.map(c => "<li><span>" + f(c.at) + "</span> " + e(c.summary) + "</li>").join("") + "</ul></details>" : "");
+    el.hidden = false; }).catch(() => {});
+      </script>
       <div class="who" id="who" hidden></div>
     </div>
     <div class="ctrls" style="display:flex;gap:8px;flex-wrap:wrap">
@@ -495,17 +511,20 @@ body.no-export [data-export],body.no-export .tk [data-a="csv"]{display:none!impo
   <section data-panel="mgmt" class="hidden">
     <div class="panel">
       <h2>Management dashboard – statutory compliance</h2>
-      <p class="lead">For each company on Highrise (Kanix- Highrise): whether each return was filed and uploaded in the system on time, and the amount. Pick a month and a compliance, then filter by tick or amount. Every change is saved to the Compliance tab of the data sheet with who changed it and when.</p>
+      <p class="lead">Every return and payment for each company on Highrise (Kanix- Highrise), with its due date. Enter the date it was filed or paid and the amount: the dashboard marks it on time or late against the due date, and overdue when the due date passes with nothing entered. A return applies only when the company is registered for it (GST needs a GSTIN in the master; TDS a TAN; PF, ESI and P.Tax their numbers) – set these once under <b>Company registrations</b>. Every change is saved to the data sheet with who changed it and when.</p>
     </div>
     <div class="cmpcards" id="mgCards"></div>
     <div class="toolbar">
       <label class="fl">Month <select id="mgPer" aria-label="Month"></select></label>
       <label class="fl">Compliance <select id="mgHead" aria-label="Compliance"></select></label>
-      <label class="fl">Tick <select id="mgSt" aria-label="Tick"><option value="">All</option><option>On time</option><option>Late</option><option>Pending</option><option>N/A</option></select></label>
-      <label class="fl">Amount <select id="mgAmt" aria-label="Amount"><option value="">All</option><option value="y">Amount entered</option><option value="n">Amount not entered</option><option value="gt">Above ₹…</option></select>
+      <label class="fl">Return <select id="mgRet" aria-label="Return"></select></label>
+      <label class="fl">Status <select id="mgSt" aria-label="Status"><option value="">All</option><option>On time</option><option>Late</option><option>Overdue</option><option>Pending</option><option>N/A</option></select></label>
+      <label class="fl">Amount <select id="mgAmt" aria-label="Amount"><option value="">All</option><option value="y">Entered</option><option value="n">Not entered</option><option value="gt">Above ₹…</option></select>
         <input type="number" id="mgAmtMin" min="0" placeholder="₹" aria-label="Minimum amount" class="hidden" style="width:110px"></label>
+      <label class="fl">Uploaded <select id="mgUp" aria-label="Uploaded in system"><option value="">All</option><option value="y">Yes</option><option value="n">No</option></select></label>
       <input type="search" id="mgQ" placeholder="Search company" aria-label="Search company">
       <span class="sp"></span>
+      <button class="lbtn" id="mgSetupBtn" aria-pressed="false">Company registrations</button>
       <button class="lbtn" id="mgRefresh">Refresh</button>
       <button class="lbtn" data-export="mgmt">Download CSV</button>
       <button class="lbtn" id="mgPrint">Print</button>
@@ -795,94 +814,173 @@ function renderCapital(){
 }
 
 /* ================= Management dashboard: statutory compliance of companies on Highrise ================= */
-let MGC = null, cmpLoading = false, cmpErr = "", sortMg = {k:"sr", d:1};
-const MGC_ST = {"On time": {c:"ok", t:"✓ On time"}, "Late": {c:"late", t:"! Late"}, "Pending": {c:"pend", t:"☐ Pending"}, "N/A": {c:"na", t:"N/A"}};
+// Returns, frequencies and due-date rules come from the server (compliance.js). A period is the month a return is
+// for (a quarter or year is keyed by its last month). Status is worked out here from the filed date and due date.
+let MGC = null, cmpLoading = false, cmpErr = "", sortMg = {k: "sr", d: 1}, mgSetup = false;
+const MGC_ST = {"On time": {c: "ok", i: "✓"}, "Done": {c: "ok", i: "✓"}, "Late": {c: "late", i: "!"}, "Overdue": {c: "pend", i: "✗"}, "Pending": {c: "wait", i: "☐"}, "N/A": {c: "na", i: "–"}};
 const mgCompanies = () => E.filter(e => /high\s*rise/i.test(e.sw || ""));
 const perLabel = k => { const [y, m] = k.split("-"); return new Date(+y, +m - 1, 1).toLocaleString("en-IN", {month: "short", year: "numeric"}); };
+const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const showDay = s => s ? new Date(s + "T00:00:00").toLocaleDateString("en-IN", {day: "2-digit", month: "short", year: "numeric"}) : "";
+const validGstin = g => /^\d{2}[A-Z]{5}\d{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/.test(String(g || "").trim().toUpperCase());
 (function initMgPeriods(){
   const now = new Date(), opts = [];
   for (let i = -1; i <= 24; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); opts.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`); }
-  $("#mgPer").innerHTML = opts.map(k => `<option value="${k}">${perLabel(k)}</option>`).join("");
+  $("#mgPer").innerHTML = opts.map(k => `<option value="${k}">${perLabel(k)}${["03", "06", "09", "12"].includes(k.slice(5)) ? " (quarter end" + (k.slice(5) === "03" ? ", year end" : "") + ")" : ""}</option>`).join("");
   $("#mgPer").value = opts[2];   // last month: a month's returns are filed in the following month
 })();
+// Returns that exist for a period: monthly every month, M2 in the first two months of a quarter, Q at quarter end, Y in March.
+function returnsFor(per){
+  const m = +per.slice(5), qEnd = m % 3 === 0;
+  return MGC.returns.filter(r => r.freq === "M" || (r.freq === "M2" && !qEnd) || (r.freq === "Q" && qEnd) || (r.freq === "Y" && m === 3));
+}
+const shortOf = (r, per) => r.old && per < "2026-04" ? r.old : r.short;
+const nameOf = (r, per) => r.old && per < "2026-04" ? r.name.replace(/(Form d+, was (w+))/, "(Form $1)") : r.name;
+function dueOf(r, per){
+  if (!r.due) return "";
+  const rule = per.slice(5) === "03" && r.mar ? r.mar : r.due, y = +per.slice(0, 4), m = +per.slice(5) - 1 + rule.m;
+  const last = new Date(y, m + 1, 0).getDate();
+  return isoDay(new Date(y, m, Math.min(rule.d, last)));
+}
+const setupOf = name => (MGC.setup.find(s => s.company === name) || {company: name, gstFreq: "Monthly", tan: "", nri: "", pf: "", esi: "", ptax: "", grat: "", pens: ""});
+function applies(e, r){
+  const s = setupOf(e.name);
+  if (r.needs === "gst") return validGstin(e.gst) && (!r.gst || s.gstFreq === r.gst);
+  if (r.needs === "tan") return !!s.tan;
+  if (r.needs === "nri") return !!s.tan && s.nri === "Y";
+  if (r.needs === "grat" || r.needs === "pens") return s[r.needs] === "Y";
+  return !!s[r.needs];
+}
+const whyNot = r => ({gst: r.gst ? `No GSTIN, or GST filing is not ${r.gst}` : "No GSTIN", tan: "No TAN", nri: "No TAN, or no non-resident payments", pf: "No PF code", esi: "No ESI code", ptax: "No P.Tax RC no.", grat: "Gratuity not ticked", pens: "Pension not ticked"})[r.needs];
 async function loadCompliance(fresh){
   if (cmpLoading) return; cmpLoading = true;
   try { MGC = await api("api/compliance" + (fresh ? "?refresh=1" : "")); cmpErr = ""; }
   catch (e) { cmpErr = e.message; }
   cmpLoading = false; renderMgmt();
 }
-const cmpKey = (per, co, h) => `${per}|${co}|${h}`;
-function cmpMap(){ const m = new Map(); (MGC ? MGC.rows : []).forEach(r => m.set(cmpKey(r.period, r.company, r.head), r)); return m; }
-async function saveCmp(item){
-  try { const j = await api("api/compliance", {items: [item]}); MGC.rows = j.rows; }
+async function postCmp(url, body){
+  try { const j = await api(url, body); MGC.rows = j.rows; MGC.setup = j.setup; }
   catch (e) { alert("Not saved: " + e.message); }
   renderMgmt();
 }
 function renderMgmt(){
   if (!$("#tMg")) return;
-  if (!MGC) {
-    if (cmpErr) { $("#mgCount").textContent = "Could not load compliance: " + cmpErr; return; }
-    $("#mgCount").textContent = "Loading compliance…"; return;
-  }
-  const printing = document.body.classList.contains("print-mgmt");
-  const heads = MGC.heads, edit = MGC.canEdit && !printing, per = $("#mgPer").value, M = cmpMap();
-  if (!$("#mgHead").options.length) $("#mgHead").innerHTML = `<option value="">All compliances</option>` + heads.map(h => `<option>${h}</option>`).join("");
-  const head = $("#mgHead").value, show = head ? [head] : heads, one = !!head;
-  const st = $("#mgSt").value, amtF = $("#mgAmt").value, amtMin = +$("#mgAmtMin").value || 0;
+  if (!MGC) { $("#mgCount").textContent = cmpErr ? "Could not load compliance: " + cmpErr : "Loading compliance…"; return; }
+  const printing = document.body.classList.contains("print-mgmt"), edit = MGC.canEdit && !printing;
+  $("#mgSetupBtn").setAttribute("aria-pressed", mgSetup);
+  $("#mgSetupBtn").textContent = mgSetup ? "Back to returns" : "Company registrations";
+  document.querySelectorAll("#mgCards, label.fl:has(#mgHead), label.fl:has(#mgRet), label.fl:has(#mgSt), label.fl:has(#mgAmt), label.fl:has(#mgUp), label.fl:has(#mgPer)").forEach(x => x.classList.toggle("hidden", mgSetup));
+  return mgSetup ? renderSetup(edit) : renderReturns(edit, printing);
+}
+
+function renderReturns(edit, printing){
+  const per = $("#mgPer").value, today = isoDay(new Date()), all = mgCompanies();
+  const M = new Map(MGC.rows.map(r => [`${r.period}|${r.company}|${r.ret}`, r]));
+  const avail = returnsFor(per);
+  if (!$("#mgHead").options.length) $("#mgHead").innerHTML = `<option value="">All compliances</option>` + MGC.heads.map(h => `<option>${h}</option>`).join("");
+  const head = $("#mgHead").value;
+  const retOpts = avail.filter(r => !head || r.head === head), keep = $("#mgRet").value;
+  $("#mgRet").innerHTML = `<option value="">All returns</option>` + retOpts.map(r => `<option value="${r.id}">${esc(nameOf(r, per))}</option>`).join("");
+  $("#mgRet").value = retOpts.some(r => r.id === keep) ? keep : "";
+  const one = retOpts.find(r => r.id === $("#mgRet").value), show = one ? [one] : retOpts;
+
+  const cell = (e, r) => {
+    const x = M.get(`${per}|${e.name}|${r.id}`) || {}, due = dueOf(r, per), ok = applies(e, r);
+    const status = !ok || x.na === "Y" ? "N/A" : x.filed ? (due ? (x.filed <= due ? "On time" : "Late") : "Done") : (due && today > due ? "Overdue" : "Pending");
+    return {status, auto: !ok, due, filed: x.filed || "", amount: ok ? x.amount ?? null : null, uploaded: x.uploaded || "", na: x.na || "", remark: x.remark || "", by: x.by || "", at: x.at || ""};
+  };
+  // Cards: one per compliance for the month, over every company and every applicable return.
+  $("#mgCards").innerHTML = MGC.heads.map(h => { const rs = avail.filter(r => r.head === h), n = {"On time": 0, "Late": 0, "Overdue": 0, "Pending": 0, "N/A": 0}; let amt = 0;
+    all.forEach(e => rs.forEach(r => { const c = cell(e, r); n[c.status === "Done" ? "On time" : c.status]++; amt += c.amount || 0; }));
+    return `<button class="cmpcard${head === h ? " on" : ""}${rs.length ? "" : " off"}" data-h="${h}"><b>${h}</b>${rs.length ? `<span class="ok">✓ On time ${n["On time"]}</span><span class="late">! Late ${n.Late}</span><span class="pend">✗ Overdue ${n.Overdue}</span><span class="wait">☐ Not yet due ${n.Pending}</span><span class="na">– N/A ${n["N/A"]}</span><em>₹${INR.format(amt)}</em>` : `<span class="na">Nothing due for ${perLabel(per)}</span>`}</button>`; }).join("");
+  $("#mgCards").querySelectorAll(".cmpcard").forEach(c => c.onclick = () => { $("#mgHead").value = $("#mgHead").value === c.dataset.h ? "" : c.dataset.h; $("#mgRet").value = ""; renderMgmt(); });
+
+  const st = $("#mgSt").value, amtF = $("#mgAmt").value, amtMin = +$("#mgAmtMin").value || 0, upF = $("#mgUp").value, q = norm($("#mgQ").value || "");
   $("#mgAmtMin").classList.toggle("hidden", amtF !== "gt");
-  const q = norm($("#mgQ").value || "");
-  const all = mgCompanies();
-  const cell = (name, h) => { const r = M.get(cmpKey(per, name, h));
-    return {status: r ? r.status : "Pending", amount: r ? r.amount : null, remark: r ? r.remark : "", by: r ? r.by : "", at: r ? r.at : ""}; };
-
-  // Month summary per compliance (all companies); clicking a card filters to that compliance.
-  $("#mgCards").innerHTML = heads.map(h => { const n = {"On time": 0, "Late": 0, "Pending": 0, "N/A": 0}; let amt = 0;
-    all.forEach(e => { const c = cell(e.name, h); n[c.status]++; amt += c.amount || 0; });
-    return `<button class="cmpcard${head === h ? " on" : ""}" data-h="${h}"><b>${h}</b><span class="ok">✓ On time ${n["On time"]}</span><span class="late">! Late ${n.Late}</span><span class="pend">☐ Pending ${n.Pending}</span><span class="na">N/A ${n["N/A"]}</span><em>₹${INR.format(amt)}</em></button>`; }).join("");
-  $("#mgCards").querySelectorAll(".cmpcard").forEach(c => c.onclick = () => { $("#mgHead").value = $("#mgHead").value === c.dataset.h ? "" : c.dataset.h; renderMgmt(); });
-
-  const amtOk = c => amtF === "y" ? c.amount != null : amtF === "n" ? c.amount == null && c.status !== "N/A" : (c.amount || 0) > amtMin;
-  const rows = all.filter(e => !q || norm(e.name).includes(q)).filter(e => {
-    const cs = show.map(h => cell(e.name, h));
-    return (!st || cs.some(c => c.status === st)) && (!amtF || cs.some(amtOk));
-  });
-  const [sk, sh] = sortMg.k.split(":");
-  const key = sk === "name" ? (e => e.name.toLowerCase()) : sk === "st" ? (e => ["On time", "Late", "Pending", "N/A"].indexOf(cell(e.name, sh).status))
-    : sk === "amt" ? (e => cell(e.name, sh).amount ?? -1) : (e => +e.sr || 0);
+  const match = c => (!st || c.status === st || (st === "On time" && c.status === "Done")) &&
+    (!amtF || (amtF === "y" ? c.amount != null : amtF === "n" ? c.amount == null && c.status !== "N/A" : (c.amount || 0) > amtMin)) &&
+    (!upF || (upF === "y" ? c.uploaded === "Y" : c.uploaded !== "Y" && c.status !== "N/A"));
+  const rows = all.filter(e => !q || norm(e.name).includes(q)).filter(e => !(st || amtF || upF) || show.some(r => match(cell(e, r))));
+  const [sk, sid] = sortMg.k.split(":"), rr = show.find(r => r.id === sid);
+  const ORDER = ["Overdue", "Late", "Pending", "On time", "Done", "N/A"];
+  const key = sk === "name" ? (e => e.name.toLowerCase()) : sk === "st" && rr ? (e => ORDER.indexOf(cell(e, rr).status)) : sk === "amt" && rr ? (e => cell(e, rr).amount ?? -1)
+    : sk === "filed" && rr ? (e => cell(e, rr).filed || "9") : (e => +e.sr || 0);
   rows.sort((a, b) => { const x = key(a), y = key(b); return (x > y ? 1 : x < y ? -1 : 0) * sortMg.d; });
-  $("#mgCount").textContent = `${perLabel(per)} · ${rows.length} of ${all.length} companies${head ? " · " + head : ""}` +
-    (edit ? ". Choose a tick and type the amount; each change saves straight away." : printing && !one ? ". ✓ on time  ! late  ☐ pending  – not applicable" : ".");
-
+  $("#mgCount").textContent = `${perLabel(per)} · ${rows.length} of ${all.length} companies · ${show.length ? show.length + " return" + (show.length > 1 ? "s" : "") : "nothing due"}` +
+    (one ? ` · due ${showDay(dueOf(one, per)) || "as per scheme"}` : "") +
+    (edit && one ? ". Enter the date filed or paid and the amount; each change saves straight away." : !one && MGC.canEdit && !printing ? ". Pick a Return (or click its column heading) to enter dates and amounts." : "") +
+    (printing && !one ? "  ✓ on time  ! late  ✗ overdue  ☐ not yet due  – not applicable" : "");
   const arrow = k => sortMg.k === k ? (sortMg.d > 0 ? " ▲" : " ▼") : "";
   const th = (k, h, cls = "") => `<th data-k="${k}" class="${cls}">${h}${arrow(k)}</th>`;
-  const thead = `<thead><tr><th rowspan="2" data-k="sr">Sr${arrow("sr")}</th><th rowspan="2" data-k="name">Name of company${arrow("name")}</th>` +
-    show.map(h => `<th colspan="${one ? 4 : 2}" class="grp">${h}</th>`).join("") + `</tr><tr>` +
-    show.map(h => th("st:" + h, "Tick", "grp") + th("amt:" + h, "Amount ₹", "r") + (one ? "<th>Remark</th><th>Last updated</th>" : "")).join("") + `</tr></thead>`;
-  const at = (n, h) => `data-co="${esc(n)}" data-h="${h}"`;
-  const stCell = (n, h, c) => edit
-    ? `<select class="cst ${MGC_ST[c.status].c}" ${at(n, h)} aria-label="${h} tick">${MGC.status.map(x => `<option value="${x}"${x === c.status ? " selected" : ""}>${MGC_ST[x].t}</option>`).join("")}</select>`
-    : `<span class="cst ${MGC_ST[c.status].c}">${printing && !one ? MGC_ST[c.status].t.split(" ")[0].replace("N/A", "–") : MGC_ST[c.status].t}</span>`;
-  const amCell = (n, h, c) => edit
-    ? `<input type="number" min="0" step="1" class="camt" ${at(n, h)} value="${c.amount ?? ""}" aria-label="${h} amount">`
-    : (c.amount == null ? "" : INR.format(c.amount));
-  const body = rows.map((e, i) => `<tr><td>${i + 1}</td><td class="name">${esc(e.name)}</td>` + show.map(h => { const c = cell(e.name, h);
-      return `<td class="grp">${stCell(e.name, h, c)}</td><td class="r">${amCell(e.name, h, c)}</td>` + (one
-        ? `<td>${edit ? `<input class="crem" ${at(e.name, h)} value="${esc(c.remark)}" maxlength="300" aria-label="Remark">` : esc(c.remark)}</td>` +
-          `<td class="small">${c.at ? esc(new Date(c.at).toLocaleString("en-IN", {dateStyle: "medium", timeStyle: "short"})) + "<br>" + esc(c.by) : ""}</td>`
-        : ""); }).join("") + `</tr>`).join("")
-    || `<tr><td colspan="${2 + show.length * (one ? 4 : 2)}" class="small">No company matches these filters.</td></tr>`;
-  const foot = `<tfoot><tr><td></td><td><b>Total (${rows.length} companies)</b></td>` + show.map(h => {
-    const ok = rows.filter(e => cell(e.name, h).status === "On time").length, tot = rows.reduce((t, e) => t + (cell(e.name, h).amount || 0), 0);
-    return `<td class="grp small">✓ ${ok} of ${rows.length}</td><td class="r"><b>${INR.format(tot)}</b></td>` + (one ? "<td></td><td></td>" : ""); }).join("") + `</tr></tfoot>`;
-
-  const t = $("#tMg"); t.innerHTML = thead + `<tbody>${body}</tbody>` + foot;
+  const badge = c => `<span class="cst ${MGC_ST[c.status].c}" title="${c.auto ? "" : c.status}">${MGC_ST[c.status].i} ${one || !printing ? c.status : ""}</span>`;
+  const t = $("#tMg"); let html;
+  if (one) {
+    const r = one;
+    html = `<thead><tr>${th("sr", "Sr")}${th("name", "Name of company")}<th>Due date</th>${th("filed:" + r.id, "Filed / paid on")}${th("st:" + r.id, "Status")}${th("amt:" + r.id, "Amount ₹", "r")}<th>Uploaded in system</th><th>Not applicable</th><th>Remark</th><th>Last updated</th></tr></thead><tbody>` +
+      (rows.map((e, i) => { const c = cell(e, r), at = `data-co="${esc(e.name)}"`;
+        const lock = !edit || c.auto;
+        return `<tr><td>${i + 1}</td><td class="name">${esc(e.name)}</td><td>${showDay(c.due) || "–"}</td>` +
+          `<td>${lock ? showDay(c.filed) : `<input type="date" class="cdate" ${at} value="${c.filed}" aria-label="Filed or paid on">`}</td>` +
+          `<td>${badge(c)}${c.auto ? `<div class="small">${whyNot(r)}</div>` : ""}</td>` +
+          `<td class="r">${lock ? (c.amount == null ? "" : INR.format(c.amount)) : `<input type="number" min="0" step="1" class="camt" ${at} value="${c.amount ?? ""}" aria-label="Amount">`}</td>` +
+          `<td>${lock ? (c.uploaded === "Y" ? "✓ Yes" : c.auto ? "" : "No") : `<input type="checkbox" class="cup" ${at}${c.uploaded === "Y" ? " checked" : ""} aria-label="Uploaded in system">`}</td>` +
+          `<td>${lock ? (c.na === "Y" ? "Yes" : "") : `<input type="checkbox" class="cna" ${at}${c.na === "Y" ? " checked" : ""} aria-label="Not applicable">`}</td>` +
+          `<td>${lock ? esc(c.remark) : `<input class="crem" ${at} value="${esc(c.remark)}" maxlength="300" aria-label="Remark">`}</td>` +
+          `<td class="small">${c.at ? esc(new Date(c.at).toLocaleString("en-IN", {dateStyle: "medium", timeStyle: "short"})) + "<br>" + esc(c.by) : ""}</td></tr>`; }).join("") ||
+       `<tr><td colspan="10" class="small">No company matches these filters.</td></tr>`) + `</tbody>`;
+    const ap = rows.filter(e => cell(e, r).status !== "N/A");
+    html += `<tfoot><tr><td></td><td><b>Total (${rows.length} companies, ${ap.length} applicable)</b></td><td></td><td></td><td class="small">✓ ${ap.filter(e => /On time|Done/.test(cell(e, r).status)).length} of ${ap.length}</td><td class="r"><b>${INR.format(rows.reduce((s, e) => s + (cell(e, r).amount || 0), 0))}</b></td><td class="small">${ap.filter(e => cell(e, r).uploaded === "Y").length} of ${ap.length}</td><td></td><td></td><td></td></tr></tfoot>`;
+    t._head = ["Sr", "Name of company", "Return", "Due date", "Filed / paid on", "Status", "Amount (₹)", "Uploaded in system", "Not applicable", "Remark", "Updated by", "Updated at"];
+    t._rows = rows.map((e, i) => { const c = cell(e, r); return [i + 1, e.name, nameOf(r, per), c.due, c.filed, c.status + (c.auto ? ` (${whyNot(r)})` : ""), c.amount ?? "", c.uploaded === "Y" ? "Yes" : "No", c.na === "Y" ? "Yes" : "", c.remark, c.by, c.at]; });
+  } else {
+    html = `<thead><tr>${th("sr", "Sr")}${th("name", "Name of company")}${show.map(r => `<th class="grp rpick" data-r="${r.id}" title="${esc(nameOf(r, per))} – click to enter dates and amounts">${esc(shortOf(r, per))}<div class="small">due ${showDay(dueOf(r, per)) || "–"}</div></th>`).join("")}</tr></thead><tbody>` +
+      (rows.map((e, i) => `<tr><td>${i + 1}</td><td class="name">${esc(e.name)}</td>` + show.map(r => { const c = cell(e, r);
+        return `<td class="grp">${badge(c)}${c.amount != null ? `<div class="amt">₹${INR.format(c.amount)}</div>` : ""}</td>`; }).join("") + `</tr>`).join("") ||
+       `<tr><td colspan="${2 + show.length}" class="small">${show.length ? "No company matches these filters." : "Nothing is due for this month and compliance."}</td></tr>`) + `</tbody>`;
+    html += `<tfoot><tr><td></td><td><b>Total (${rows.length})</b></td>` + show.map(r => { const ap = rows.filter(e => cell(e, r).status !== "N/A");
+      return `<td class="grp small">✓ ${ap.filter(e => /On time|Done/.test(cell(e, r).status)).length} of ${ap.length}<div><b>₹${INR.format(rows.reduce((s, e) => s + (cell(e, r).amount || 0), 0))}</b></div></td>`; }).join("") + `</tr></tfoot>`;
+    t._head = ["Sr", "Name of company", ...show.flatMap(r => [`${shortOf(r, per)} status`, `${shortOf(r, per)} amount (₹)`])];
+    t._rows = rows.map((e, i) => [i + 1, e.name, ...show.flatMap(r => { const c = cell(e, r); return [c.status, c.amount ?? ""]; })]);
+  }
+  t.innerHTML = html;
   t.querySelectorAll("th[data-k]").forEach(h => h.onclick = () => { sortMg = {k: h.dataset.k, d: sortMg.k === h.dataset.k ? -sortMg.d : 1}; renderMgmt(); });
-  const cur = el => { const c = cell(el.dataset.co, el.dataset.h); return {period: per, company: el.dataset.co, head: el.dataset.h, status: c.status, amount: c.amount ?? "", remark: c.remark}; };
-  t.querySelectorAll("select.cst").forEach(el => el.onchange = () => saveCmp({...cur(el), status: el.value}));
-  t.querySelectorAll("input.camt").forEach(el => el.onchange = () => saveCmp({...cur(el), amount: el.value === "" ? "" : +el.value}));
-  t.querySelectorAll("input.crem").forEach(el => el.onchange = () => saveCmp({...cur(el), remark: el.value}));
-  t._head = ["Sr", "Name of company", ...show.flatMap(h => one ? [`${h} tick`, `${h} amount (₹)`, `${h} remark`, "Updated by", "Updated at"] : [`${h} tick`, `${h} amount (₹)`])];
-  t._rows = rows.map((e, i) => [i + 1, e.name, ...show.flatMap(h => { const c = cell(e.name, h); return one ? [c.status, c.amount ?? "", c.remark, c.by, c.at] : [c.status, c.amount ?? ""]; })]);
+  t.querySelectorAll("th.rpick").forEach(h => h.onclick = () => { const r = MGC.returns.find(x => x.id === h.dataset.r); $("#mgHead").value = r.head; renderMgmt(); $("#mgRet").value = r.id; renderMgmt(); });
+  if (one && edit) {
+    const save = el => { const tr = el.closest("tr"), co = el.dataset.co, g = s => tr.querySelector(s);
+      postCmp("api/compliance", {items: [{period: per, company: co, ret: one.id, filed: g(".cdate").value, amount: g(".camt").value,
+        uploaded: g(".cup").checked, na: g(".cna").checked, remark: g(".crem").value}]}); };
+    t.querySelectorAll(".cdate,.camt,.cup,.cna,.crem").forEach(el => el.onchange = () => save(el));
+  }
+}
+
+function renderSetup(edit){
+  const all = mgCompanies(), q = norm($("#mgQ").value || "");
+  const F = [["gstFreq", "GST filing"], ["tan", "TAN"], ["nri", "Non-resident TDS (Form 144)"], ["pf", "PF code"], ["esi", "ESI code"], ["ptax", "P.Tax RC no."], ["grat", "Gratuity"], ["pens", "Pension"]];
+  const rows = all.filter(e => !q || norm(e.name).includes(q));
+  const [sk] = sortMg.k.split(":");
+  const key = sk === "name" ? (e => e.name.toLowerCase()) : sk === "gst" ? (e => validGstin(e.gst) ? 0 : 1) : F.some(f => f[0] === sk) ? (e => String(setupOf(e.name)[sk] || "~")) : (e => +e.sr || 0);
+  rows.sort((a, b) => { const x = key(a), y = key(b); return (x > y ? 1 : x < y ? -1 : 0) * sortMg.d; });
+  const n = k => all.filter(e => k === "gst" ? validGstin(e.gst) : !!setupOf(e.name)[k]).length;
+  $("#mgCount").textContent = `Company registrations · ${rows.length} of ${all.length} companies. GSTIN on file: ${n("gst")} · TAN: ${n("tan")} · PF: ${n("pf")} · ESI: ${n("esi")} · P.Tax: ${n("ptax")}. ` +
+    `A blank number means that compliance does not apply to the company.` + (edit ? " Each change saves straight away." : "");
+  const arrow = k => sortMg.k === k ? (sortMg.d > 0 ? " ▲" : " ▼") : "";
+  const th = (k, h) => `<th data-k="${k}">${h}${arrow(k)}</th>`;
+  const t = $("#tMg");
+  t.innerHTML = `<thead><tr>${th("sr", "Sr")}${th("name", "Name of company")}${th("gst", "GSTIN (from master)")}${F.map(([k, h]) => th(k, h)).join("")}<th>Last updated</th></tr></thead><tbody>` +
+    rows.map((e, i) => { const s = setupOf(e.name), at = `data-co="${esc(e.name)}"`, gOk = validGstin(e.gst);
+      const txt = (k, ph) => edit ? `<input class="sin" data-k="${k}" ${at} value="${esc(s[k])}" placeholder="${ph}" maxlength="40" aria-label="${k}">` : esc(s[k]);
+      const box = k => edit ? `<input type="checkbox" class="sin" data-k="${k}" ${at}${s[k] === "Y" ? " checked" : ""} aria-label="${k}">` : (s[k] === "Y" ? "✓" : "");
+      return `<tr><td>${i + 1}</td><td class="name">${esc(e.name)}</td><td>${gOk ? esc(e.gst) : `<span class="na">Not registered</span>`}</td>` +
+        `<td>${!gOk ? "–" : edit ? `<select class="sin" data-k="gstFreq" ${at}><option${s.gstFreq === "Monthly" ? " selected" : ""}>Monthly</option><option${s.gstFreq === "QRMP" ? " selected" : ""}>QRMP</option></select>` : esc(s.gstFreq)}</td>` +
+        `<td>${txt("tan", "ABCD12345E")}</td><td>${box("nri")}</td><td>${txt("pf", "")}</td><td>${txt("esi", "")}</td><td>${txt("ptax", "")}</td><td>${box("grat")}</td><td>${box("pens")}</td>` +
+        `<td class="small">${s.at ? esc(new Date(s.at).toLocaleString("en-IN", {dateStyle: "medium", timeStyle: "short"})) + "<br>" + esc(s.by) : ""}</td></tr>`; }).join("") + `</tbody>`;
+  t.querySelectorAll("th[data-k]").forEach(h => h.onclick = () => { sortMg = {k: h.dataset.k, d: sortMg.k === h.dataset.k ? -sortMg.d : 1}; renderMgmt(); });
+  if (edit) t.querySelectorAll(".sin").forEach(el => el.onchange = () => {
+    const tr = el.closest("tr"), v = k => { const x = tr.querySelector(`[data-k="${k}"]`); return !x ? setupOf(el.dataset.co)[k] : x.type === "checkbox" ? x.checked : x.value; };
+    postCmp("api/compliance/setup", {company: el.dataset.co, ...Object.fromEntries(F.map(([k]) => [k, v(k)]))});
+  });
+  t._head = ["Sr", "Name of company", "GSTIN", ...F.map(f => f[1]), "Updated by", "Updated at"];
+  t._rows = rows.map((e, i) => { const s = setupOf(e.name); return [i + 1, e.name, validGstin(e.gst) ? e.gst : "", ...F.map(([k]) => s[k] === "Y" ? "Yes" : s[k] || ""), s.by, s.at]; });
 }
 function renderObs(){
   $("#checks").innerHTML = Object.entries(CHECK_LABEL).map(([k, l]) => { const fail = E.filter(e => !e.checks[k]).length;
@@ -1924,12 +2022,12 @@ function selectTab(tab){
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => selectTab(b.dataset.tab));
 [["#q","q"],["#fCon","con"],["#fProj","proj"],["#fGst","gst"],["#fSw","sw"],["#fDir","dir"]].forEach(([s, k]) => $(s).addEventListener("input", e => { F[k] = e.target.value; renderRegister(); }));
 $("#clearF").onclick = () => goRegister({});
-$("#fCap").oninput = renderCapital; $("#fKind").oninput = e => { finKind = e.target.value; renderFin(); }; $("#fSev").oninput = renderObs; ["#mgQ", "#mgPer", "#mgHead", "#mgSt", "#mgAmt", "#mgAmtMin"].forEach(x => $(x).addEventListener("input", renderMgmt)); $("#mgRefresh").onclick = () => loadCompliance(true);
-$("#mgPrint").onclick = () => { $("#mgStamp").textContent = `Management dashboard – compliance for ${perLabel($("#mgPer").value)}${$("#mgHead").value ? " – " + $("#mgHead").value : ""}${$("#mgSt").value ? " – " + $("#mgSt").value : ""} – printed ${new Date().toLocaleString("en-IN", {dateStyle:"medium", timeStyle:"short"})}`; document.body.classList.add("print-mgmt"); renderMgmt(); window.print(); };
+$("#fCap").oninput = renderCapital; $("#fKind").oninput = e => { finKind = e.target.value; renderFin(); }; $("#fSev").oninput = renderObs; ["#mgQ", "#mgPer", "#mgHead", "#mgRet", "#mgSt", "#mgAmt", "#mgAmtMin", "#mgUp"].forEach(x => $(x).addEventListener("input", renderMgmt));
+$("#mgSetupBtn").onclick = () => { mgSetup = !mgSetup; sortMg = {k: "sr", d: 1}; renderMgmt(); }; $("#mgRefresh").onclick = () => loadCompliance(true);
+$("#mgPrint").onclick = () => { $("#mgStamp").textContent = `Management dashboard – ${mgSetup ? "company registrations" : "compliance for " + perLabel($("#mgPer").value) + ($("#mgRet").value ? " – " + $("#mgRet").selectedOptions[0].text : $("#mgHead").value ? " – " + $("#mgHead").value : "") + ($("#mgSt").value ? " – " + $("#mgSt").value : "")} – printed ${new Date().toLocaleString("en-IN", {dateStyle:"medium", timeStyle:"short"})}`; document.body.classList.add("print-mgmt"); renderMgmt(); window.print(); };
 window.addEventListener("afterprint", () => { if (!document.body.classList.contains("print-mgmt")) return; document.body.classList.remove("print-mgmt"); renderMgmt(); });
 
-fetch("version", {cache: "no-store"}).then(r => r.json()).then(v => { if (!v.time) return; const el = document.getElementById("lastUpd");
-  el.textContent = "Last updated: " + new Date(v.time).toLocaleString("en-IN", {day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"}) + (v.commit ? " (version " + v.commit + ")" : ""); el.hidden = false; }).catch(() => {});
+
 function csvDownload(name, header, rows){
   const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const csv = [header.map(q).join(","), ...rows.map(r => r.map(q).join(","))].join("\r\n");
@@ -1950,7 +2048,7 @@ document.querySelectorAll("[data-export]").forEach(b => b.onclick = () => {
     existingLoans().map(r => [r.lender, r.borrower, r.amt.toFixed(2), r.route, r.dd ? "Yes" : r.dd === false ? "No" : "To assess", ...CMP_FIELDS.map(([k]) => reqFields(r).some(([q]) => q === k) ? ((CMP[r.id] || {})[k]) || "Pending" : "Not required"), "", ""]));
   if (w === "dir") csvDownload("Director_Register", ["Sr","Name","DIN / DPIN","PAN","PAN check","Date of birth","Age","Aadhaar (masked)","Positions","Company directorships","Entities and designation"],
     drPeople().map((p, i) => { const inf = drInfo(p); return [i + 1, p.name, p.din, inf.pan, drPanCheck(inf.pan, p.name).txt, inf.dob ? inf.dob.split("-").reverse().join("-") : "", drAge(inf.dob), drMask(inf.aad), p.roles.length, drCo(p), p.roles.map(r => `${r.entity} – ${r.desig}`).join("; ")]; }));
-  if (w === "mgmt") csvDownload(`Compliance_${$("#mgPer").value}${$("#mgHead").value ? "_" + $("#mgHead").value : ""}`, $("#tMg")._head, $("#tMg")._rows);
+  if (w === "mgmt") csvDownload(mgSetup ? "Compliance_registrations" : `Compliance_${$("#mgPer").value}${$("#mgRet").value ? "_" + $("#mgRet").value : $("#mgHead").value ? "_" + $("#mgHead").value : ""}`, $("#tMg")._head, $("#tMg")._rows);
   if (w === "obs") csvDownload("Company_Master_Observations", ["Severity","Entity","Observation","Recommended action","Action owner","Target date","Status"], $("#tObs")._rows.map(o => [o.sev, o.entity, o.obs, o.action, "", "", "Open"]));
 });
 

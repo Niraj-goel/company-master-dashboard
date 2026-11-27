@@ -1,0 +1,52 @@
+{
+ "changes": [
+  {
+   "at": "2026-11-27T08:14:12.958Z",
+   "summary": "Compliance by return with due dates, auto N/A from registrations; Last updated shows what changed"
+  },
+  {
+   "at": "2026-11-27T13:22:23+05:30",
+   "summary": "Turn the Management dashboard into a statutory compliance tracker"
+  },
+  {
+   "at": "2026-11-27T13:22:17+05:30",
+   "summary": "Show the last code update time in both dashboards' headers"
+  },
+  {
+   "at": "2026-11-27T13:08:22+05:30",
+   "summary": "Add Management dashboard tab listing companies on Highrise"
+  },
+  {
+   "at": "2026-11-26T18:14:10+05:30",
+   "summary": "Add email sign-in, maker-checker requests and access matrix to Job Checklist"
+  },
+  {
+   "at": "2026-11-26T17:22:32+05:30",
+   "summary": "Make the access matrix per person instead of per role"
+  },
+  {
+   "at": "2026-11-26T14:21:23+05:30",
+   "summary": "Add sign-in, Admin/General roles and access matrix to Company Master"
+  },
+  {
+   "at": "2026-11-22T19:10:36+05:30",
+   "summary": "Add live Job Checklist dashboard for Render"
+  },
+  {
+   "at": "2026-11-16T12:08:25+05:30",
+   "summary": "Download PAN card, GST certificate and ROC record from the register"
+  },
+  {
+   "at": "2026-11-16T11:55:56+05:30",
+   "summary": "Accept the service-account key in any common paste format"
+  },
+  {
+   "at": "2026-11-16T11:41:25+05:30",
+   "summary": "Add package.json so hosts detect the Node app"
+  },
+  {
+   "at": "2026-11-16T11:35:39+05:30",
+   "summary": "first commit"
+  }
+ ]
+}
