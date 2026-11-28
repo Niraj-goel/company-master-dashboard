@@ -1,7 +1,11 @@
 {
  "changes": [
   {
-   "at": "2026-11-27T08:41:04.796Z",
+   "at": "2026-11-28T09:41:06.243Z",
+   "summary": "Creditors MIS: Party and Cost centre filters in company drill-down"
+  },
+  {
+   "at": "2026-11-27T14:11:05+05:30",
    "summary": "MIS section with live Creditors report from Drive"
   },
   {

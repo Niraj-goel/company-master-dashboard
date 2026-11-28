@@ -568,6 +568,8 @@ fetch("version", {cache: "no-store"}).then(r => r.json()).then(v => { if (!v.tim
       <div class="toolbar">
         <button class="lbtn hidden" id="misBack">← All companies</button>
         <div class="chips hidden" id="misView" role="group" aria-label="View"><button class="chip" data-v="parties" aria-pressed="true">Party-wise</button><button class="chip" data-v="bills" aria-pressed="false">Bill-wise overdue</button></div>
+        <label class="fl hidden" id="misPartyL">Party <select id="misParty" aria-label="Party" style="max-width:260px"></select></label>
+        <label class="fl hidden" id="misCcL">Cost centre <select id="misCc" aria-label="Cost centre" style="max-width:220px"></select></label>
         <input type="search" id="misQ" placeholder="Search" aria-label="Search">
         <label class="fl hidden" id="misBucketL">Ageing <select id="misBucket" aria-label="Ageing"><option value="">All</option><option value="d1_15">1–15 days</option><option value="d16_30">16–30 days</option><option value="d31_180">31–180 days</option><option value="d180">Over 180 days</option></select></label>
         <label class="fl" id="misMsmeL">MSME <select id="misMsme" aria-label="MSME"><option value="">All</option><option value="y">MSME only</option></select></label>
@@ -1045,9 +1047,38 @@ async function loadMis(refresh){
   misLoading = false; $("#misRefresh").disabled = false; renderMis();
 }
 async function openMisCo(name, quiet){
-  try { misCo = await api("api/mis/creditors/company?name=" + encodeURIComponent(name)); misSort = {k: "total", d: -1}; misView = "parties"; $("#misQ").value = ""; }
+  const keep = quiet && misCo ? {p: $("#misParty").value, c: $("#misCc").value} : {p: "", c: ""};
+  try {
+    misCo = await api("api/mis/creditors/company?name=" + encodeURIComponent(name));
+    if (misCo.entries) misCo.rows = misCo.entries.map(e => Object.fromEntries(misCo.fields.map((f, i) => [f, e[i]])));
+    const opts = (sel, vals, all, v) => { sel.innerHTML = `<option value="">${all}</option>` + vals.map(x => `<option>${esc(x)}</option>`).join(""); sel.value = vals.includes(v) ? v : ""; };
+    const rowsOf = misCo.rows || [];
+    opts($("#misParty"), [...new Set(rowsOf.map(r => r.party))].sort((a, b) => a.localeCompare(b)), "All parties", keep.p);
+    opts($("#misCc"), [...new Set(rowsOf.map(r => r.cc))].sort((a, b) => a.localeCompare(b)), "All cost centres", keep.c);
+    if (!quiet) { misSort = {k: "total", d: -1}; misView = "parties"; $("#misQ").value = ""; }
+  }
   catch (e) { if (!quiet) alert(e.message); misCo = null; }
   if (!quiet) renderMis();
+}
+const MIS_BUCKET = {"Not Due": "notDue", "1-15": "d1_15", "16-30": "d16_30", "31-180": "d31_180", ">180": "d180"};
+function misDerive(){
+  const P = $("#misParty").value, C = $("#misCc").value, M = $("#misMsme").value;
+  const rows = misCo.rows.filter(r => (!P || r.party === P) && (!C || r.cc === C) && (!M || r.msme === "Yes"));
+  const by = new Map(), bills = [];
+  for (const r of rows) {
+    let x = by.get(r.party);
+    if (!x) by.set(r.party, x = {party: r.party, group: r.group, msme: r.msme, bills: 0, total: 0, notDue: 0, overdue: 0, d1_15: 0, d16_30: 0, d31_180: 0, d180: 0, advances: 0, net: 0, drcr: ""});
+    if (r.payable > 0) { x.bills++; x.total += r.payable; const b = MIS_BUCKET[r.bucket]; if (b) x[b] += r.payable;
+      if (b && b !== "notDue") bills.push({party: r.party, msme: r.msme, vchType: r.vchType, vchNo: r.vchNo, billNo: r.billNo, billDate: r.billDate, dueDate: r.dueDate,
+        days: r.days, bucket: r.bucket, amount: r.payable, costCentre: r.cc, narration: r.narration}); }
+    x.advances += r.advance;
+  }
+  const parties = [...by.values()].map(x => ({...x, overdue: x.total - x.notDue, net: x.total - x.advances, drcr: x.total - x.advances > 0.5 ? "Cr" : x.total - x.advances < -0.5 ? "Dr" : "-"}));
+  const sum = k => parties.reduce((t, x) => t + x[k], 0) / 1e5, total = sum("total");
+  const tot = {total, notDue: sum("notDue"), overdue: sum("overdue"), d1_15: sum("d1_15"), d16_30: sum("d16_30"), d31_180: sum("d31_180"), d180: sum("d180"),
+    advances: sum("advances"), net: sum("net"), pctOverdue: total ? sum("overdue") / total : 0, bills: parties.reduce((t, x) => t + x.bills, 0), parties: parties.length};
+  const label = [P && "party " + P, C && "cost centre " + C, M && "MSME only"].filter(Boolean).join(", ");
+  return {parties, bills, tot, label};
 }
 const lk = v => INR2.format(v || 0);                       // ₹ lakh, 2 decimals
 const rs = v => v ? INR.format(Math.round(v)) : "–";        // ₹ rupees
@@ -1057,10 +1088,13 @@ function renderMis(){
   if (!MIS) { $("#misSrc").textContent = misErr ? "Could not read the Creditors report: " + misErr : "Loading…"; $("#misLedger").innerHTML = ""; $("#tMis").innerHTML = ""; return; }
   const f = MIS.file, saved = new Date(f.modifiedTime).toLocaleString("en-IN", {dateStyle: "medium", timeStyle: "short"});
   $("#misSrc").innerHTML = `Creditors file in Drive: <a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)}</a> (saved ${esc(saved)}) · <a href="${esc(MIS.folderUrl)}" target="_blank" rel="noopener">Open the Drive folder</a> · read ${esc(new Date(MIS.readAt).toLocaleString("en-IN", {timeStyle: "short"}))}` + (misErr ? ` · <span class="bad">Last refresh failed: ${esc(misErr)}</span>` : "");
-  const co = misCo ? MIS.companies.find(c => c.name === misCo.name) : null, t0 = co || MIS.grand;
+  const co = misCo ? MIS.companies.find(c => c.name === misCo.name) : null;
+  const dv = misCo && misCo.rows ? misDerive() : null;
+  if (dv) { misCo.parties = dv.parties; misCo.bills = dv.bills; }
+  const t0 = dv && dv.label ? dv.tot : co || MIS.grand;
   const tile = (label, v, sub, cls = "") => `<div><dt>${label}</dt><dd class="${cls}">₹${lk(v)}<small>${sub || "lakh"}</small></dd></div>`;
   $("#misLedger").innerHTML =
-    `<div class="hero"><dt>Total creditors as on ${esc(MIS.asOn)}${co ? " – " + esc(co.name) : ""}</dt><dd>₹${lk(t0.total)}<small>lakh · ${INR.format(t0.bills)} open bills · ${INR.format(t0.parties)} parties</small></dd></div>` +
+    `<div class="hero"><dt>Total creditors as on ${esc(MIS.asOn)}${co ? " – " + esc(co.name) : ""}${dv && dv.label ? " – " + esc(dv.label) : ""}</dt><dd>₹${lk(t0.total)}<small>lakh · ${INR.format(t0.bills)} open bills · ${INR.format(t0.parties)} parties</small></dd></div>` +
     tile("Not due", t0.notDue) + tile("Overdue", t0.overdue, `lakh · ${pct(t0.pctOverdue)} of payable`, "bad") +
     tile("Overdue 1–15 days", t0.d1_15) + tile("16–30 days", t0.d16_30) + tile("31–180 days", t0.d31_180) + tile("Over 180 days", t0.d180, "lakh", t0.d180 ? "bad" : "") +
     tile("Advances / debit balances", t0.advances) + `<div><dt>Net payable / (net advance)</dt><dd>${t0.net < 0 ? "(₹" + lk(-t0.net) + ")" : "₹" + lk(t0.net)}<small>lakh</small></dd></div>`;
@@ -1069,6 +1103,8 @@ function renderMis(){
   $("#misView").classList.toggle("hidden", !misCo);
   $("#misBucketL").classList.toggle("hidden", !misCo || misView !== "parties");
   $("#misMsmeL").classList.toggle("hidden", !misCo);
+  $("#misPartyL").classList.toggle("hidden", !(misCo && misCo.rows));
+  $("#misCcL").classList.toggle("hidden", !(misCo && misCo.rows));
   $("#misView").querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === misView));
   const q = norm($("#misQ").value || ""), msme = $("#misMsme").value, bucket = $("#misBucket").value;
   const arrow = k => misSort.k === k ? (misSort.d > 0 ? " ▲" : " ▼") : "";
@@ -1092,7 +1128,7 @@ function renderMis(){
     t.innerHTML = `<thead><tr><th>#</th>${cols.map(([k, h, r]) => `<th data-k="${k}" class="${r ? "r" : ""}">${h}${r && k !== "bills" ? " (₹)" : ""}${arrow(k)}</th>`).join("")}</tr></thead><tbody>` +
       list.map((p, i) => `<tr><td>${i + 1}</td>${cols.map(([k, , r]) => r ? `<td class="r">${k === "bills" ? p[k] : rs(p[k])}</td>` : `<td class="${k === "party" ? "name" : ""}">${esc(p[k])}</td>`).join("")}</tr>`).join("") + `</tbody>` +
       `<tfoot><tr><td></td>${cols.map(([k, , r]) => k === "party" ? `<td><b>Total (${list.length})</b></td>` : r ? `<td class="r"><b>${k === "bills" ? INR.format(list.reduce((s, p) => s + p[k], 0)) : rs(list.reduce((s, p) => s + p[k], 0))}</b></td>` : "<td></td>").join("")}</tr></tfoot>`;
-    $("#misCount").textContent = `${misCo.name} · ${list.length} of ${misCo.parties.length} parties · ₹ in rupees.`;
+    $("#misCount").textContent = `${misCo.name}${dv && dv.label ? " · " + dv.label : ""} · ${list.length} of ${misCo.parties.length} parties · ₹ in rupees.`;
     t._head = ["#", ...cols.map(c => c[1] + (c[2] && c[0] !== "bills" ? " (₹)" : ""))];
     t._rows = list.map((p, i) => [i + 1, ...cols.map(([k]) => p[k])]);
     t._name = `Creditors_${MIS.asOn}_${misCo.name}_parties`;
@@ -1104,7 +1140,7 @@ function renderMis(){
     t.innerHTML = `<thead><tr><th>#</th>${cols.map(([k, h, r]) => `<th data-k="${k}" class="${r ? "r" : ""}">${h}${k === "amount" ? " (₹)" : ""}${arrow(k)}</th>`).join("")}</tr></thead><tbody>` +
       list.map((b, i) => `<tr><td>${i + 1}</td>${cols.map(([k, , r]) => r ? `<td class="r">${k === "amount" ? rs(b[k]) : INR.format(b[k])}</td>` : `<td class="${k === "party" ? "name" : ""}">${esc(b[k])}</td>`).join("")}</tr>`).join("") + `</tbody>` +
       `<tfoot><tr><td></td><td><b>Total (${list.length} bills)</b></td>${cols.slice(1).map(([k]) => k === "amount" ? `<td class="r"><b>${rs(list.reduce((s, b) => s + b.amount, 0))}</b></td>` : "<td></td>").join("")}</tr></tfoot>`;
-    $("#misCount").textContent = `${misCo.name} · ${list.length} of ${misCo.bills.length} overdue bills · ₹ in rupees.`;
+    $("#misCount").textContent = `${misCo.name}${dv && dv.label ? " · " + dv.label : ""} · ${list.length} of ${misCo.bills.length} overdue bills · ₹ in rupees.`;
     t._head = ["#", ...cols.map(c => c[1] + (c[0] === "amount" ? " (₹)" : ""))];
     t._rows = list.map((b, i) => [i + 1, ...cols.map(([k]) => b[k])]);
     t._name = `Creditors_${MIS.asOn}_${misCo.name}_overdue_bills`;
@@ -2155,10 +2191,10 @@ $("#clearF").onclick = () => goRegister({});
 $("#fCap").oninput = renderCapital; $("#fKind").oninput = e => { finKind = e.target.value; renderFin(); }; $("#fSev").oninput = renderObs; ["#mgQ", "#mgPer", "#mgHead", "#mgRet", "#mgSt", "#mgAmt", "#mgAmtMin", "#mgUp"].forEach(x => $(x).addEventListener("input", renderMgmt));
 document.querySelectorAll("#mgNav button").forEach(b => b.onclick = () => mgShow(b.dataset.sec));
 $("#misRefresh").onclick = () => loadMis(true);
-$("#misBack").onclick = () => { misCo = null; misSort = {k: "total", d: -1}; $("#misQ").value = ""; renderMis(); };
+$("#misBack").onclick = () => { $("#misParty").value = ""; $("#misCc").value = ""; misCo = null; misSort = {k: "total", d: -1}; $("#misQ").value = ""; renderMis(); };
 $("#misView").querySelectorAll(".chip").forEach(b => b.onclick = () => { misView = b.dataset.v; misSort = {k: misView === "bills" ? "days" : "total", d: -1}; renderMis(); });
-["#misQ", "#misMsme", "#misBucket"].forEach(x => $(x).addEventListener("input", renderMis));
-$("#misPrint").onclick = () => { $("#misStamp").textContent = `Management dashboard – MIS: Creditors as on ${MIS ? MIS.asOn : ""}${misCo ? " – " + misCo.name + (misView === "bills" ? " – bill-wise overdue" : " – party-wise") : ""} – printed ${new Date().toLocaleString("en-IN", {dateStyle: "medium", timeStyle: "short"})}`; document.body.classList.add("print-mgmt"); window.print(); };
+["#misQ", "#misMsme", "#misBucket", "#misParty", "#misCc"].forEach(x => $(x).addEventListener("input", renderMis));
+$("#misPrint").onclick = () => { $("#misStamp").textContent = `Management dashboard – MIS: Creditors as on ${MIS ? MIS.asOn : ""}${misCo ? " – " + misCo.name + ($("#misParty").value ? " – party " + $("#misParty").value : "") + ($("#misCc").value ? " – cost centre " + $("#misCc").value : "") + (misView === "bills" ? " – bill-wise overdue" : " – party-wise") : ""} – printed ${new Date().toLocaleString("en-IN", {dateStyle: "medium", timeStyle: "short"})}`; document.body.classList.add("print-mgmt"); window.print(); };
 $("#mgSetupBtn").onclick = () => { mgSetup = !mgSetup; sortMg = {k: "sr", d: 1}; renderMgmt(); }; $("#mgRefresh").onclick = () => loadCompliance(true);
 $("#mgPrint").onclick = () => { $("#mgStamp").textContent = `Management dashboard – ${mgSetup ? "company registrations" : "compliance for " + perLabel($("#mgPer").value) + ($("#mgRet").value ? " – " + $("#mgRet").selectedOptions[0].text : $("#mgHead").value ? " – " + $("#mgHead").value : "") + ($("#mgSt").value ? " – " + $("#mgSt").value : "")} – printed ${new Date().toLocaleString("en-IN", {dateStyle:"medium", timeStyle:"short"})}`; document.body.classList.add("print-mgmt"); renderMgmt(); window.print(); };
 window.addEventListener("afterprint", () => { if (!document.body.classList.contains("print-mgmt")) return; document.body.classList.remove("print-mgmt"); renderMgmt(); });
